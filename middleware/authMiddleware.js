@@ -8,6 +8,7 @@ const protect = async (req, res, next) => {
 
     if (!token) {
       return res.status(401).json({
+        success: false,
         message: "Not authorized, no token",
       });
     }
@@ -17,10 +18,11 @@ const protect = async (req, res, next) => {
       process.env.JWT_SECRET
     );
 
-    const user = await User.findById(decoded.id).select("-password");
+    const user = await User.findById(decoded.id);
 
     if (!user) {
       return res.status(401).json({
+        success: false,
         message: "Not authorized, user not found",
       });
     }
@@ -30,6 +32,7 @@ const protect = async (req, res, next) => {
     next();
   } catch (error) {
     return res.status(401).json({
+      success: false,
       message: "Not authorized, invalid token",
     });
   }

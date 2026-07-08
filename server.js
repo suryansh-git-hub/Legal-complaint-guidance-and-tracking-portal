@@ -11,6 +11,7 @@ import {
   notFound,
   errorHandler,
 } from "./middleware/errorMiddleware.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.get("/", (req, res) => {
 
 // Auth Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/issues", issueRoutes);
 app.use("/api/complaints", complaintRoutes);

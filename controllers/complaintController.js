@@ -146,7 +146,7 @@ const updateComplaint = async (req, res) => {
       });
     }
 
-    const { title, description, status, notes } = req.body;
+    const { title, description,  notes } = req.body;
 
     if (title !== undefined) {
       complaint.title = title;
@@ -156,9 +156,9 @@ const updateComplaint = async (req, res) => {
       complaint.description = description;
     }
 
-    if (status !== undefined) {
-      complaint.status = status;
-    }
+    // if (status !== undefined) {
+    //   complaint.status = status;
+    // }
 
     if (notes !== undefined) {
       complaint.notes = notes;

@@ -40,6 +40,17 @@ const complaintSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    adminRemarks: {
+  type: String,
+  trim: true,
+  default: "",
+},
+
+reviewedBy: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User",
+  default: null,
+},
   },
   {
     timestamps: true,
