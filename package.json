@@ -8,7 +8,8 @@
   "main": "server.js",
   "scripts": {
     "start": "nodemon server.js",
-     "seed:categories": "node seed/categorySeeder.js"
+     "seed:categories": "node seed/categorySeeder.js",
+       "seed:issues": "node seed/issueSeeder.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
