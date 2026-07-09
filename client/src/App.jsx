@@ -8,6 +8,12 @@ import AdminRoute from "./routes/AdminRoute";
 import Home from "./pages/public/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import Categories from "./pages/public/Categories";
+import Issues from "./pages/public/Issues";
+import GuidanceDetails from "./pages/public/GuidanceDetails";
+import CreateComplaint from "./pages/user/CreateComplaint";
+import MyComplaints from "./pages/user/MyComplaints";
+import ComplaintDetails from "./pages/user/ComplaintDetails";
 
 function App() {
   return (
@@ -18,10 +24,13 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
 
-          <Route
-            path="/login"
-            element={<Login />}
-          />
+          <Route path="/categories" element={<Categories />}/>
+
+          <Route path="/issues/:categoryId" element={<Issues />}/>
+
+          <Route path="/guidance/:issueId" element={<GuidanceDetails />}/>
+
+          <Route  path="/login" element={<Login />} />
 
           <Route
             path="/register"
@@ -33,10 +42,13 @@ function App() {
 
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
-            <Route
-              path="/dashboard"
-              element={<UserDashboard />}
-            />
+            <Route path="/dashboard"  element={<UserDashboard />}   />
+
+             <Route path="/complaints/new" element={<CreateComplaint />} />
+
+    <Route path="/complaints" element={<MyComplaints />} />
+
+    <Route path="/complaints/:id"  element={<ComplaintDetails />} />
           </Route>
         </Route>
 

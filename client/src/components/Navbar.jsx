@@ -28,6 +28,7 @@ function Navbar() {
 
       <div>
         <Link to="/">Home</Link>
+        <Link to="/categories"> Legal Guidance </Link>
 
         {!user && (
           <>
