@@ -4,13 +4,13 @@ import Navbar from "../components/Navbar";
 
 function MainLayout() {
   return (
-    <>
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <main>
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
         <Outlet />
       </main>
-    </>
+    </div>
   );
 }
 

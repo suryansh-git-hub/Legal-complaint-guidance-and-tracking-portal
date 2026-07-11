@@ -33,7 +33,7 @@ const complaintSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["draft", "submitted", "in-progress", "resolved", "closed"],
-      default: "draft",
+      default: "submitted",
     },
 
     notes: {
