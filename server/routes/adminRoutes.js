@@ -4,7 +4,7 @@ import { body } from "express-validator";
 import {
   getAllComplaints,
   getAdminComplaintById,
-  updateComplaintStatus,
+  updateComplaintStatus,getAdminDashboard
 } from "../controllers/adminController.js";
 import {
   validateRequest,
@@ -17,6 +17,8 @@ const router = express.Router();
 
 router.use(protect);
 router.use(adminOnly);
+
+router.get("/dashboard", getAdminDashboard);
 
 router.get("/complaints", getAllComplaints);
 

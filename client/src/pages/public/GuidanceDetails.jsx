@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { Link, } from "react-router-dom";
 
 import api from "../../api/axios";
 
@@ -85,6 +86,12 @@ function GuidanceDetails() {
           )
         )}
       </section>
+
+      <div>
+  <Link to={`/complaints/new?issueId=${issue._id}`}>
+    Create Complaint for this Issue
+  </Link>
+</div>
     </div>
   );
 }

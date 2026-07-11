@@ -1,36 +1,76 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  Link,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 
 import api from "../../api/axios";
 
 function CreateComplaint() {
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-  });
+  const [searchParams] = useSearchParams();
+
+  const issueId = searchParams.get("issueId");
+
+  const [issue, setIssue] = useState(null);
+
+  const [description, setDescription] = useState("");
 
   const [loading, setLoading] = useState(false);
+
+  const [issueLoading, setIssueLoading] =
+    useState(true);
+
   const [error, setError] = useState("");
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  useEffect(() => {
+    const fetchIssue = async () => {
+      if (!issueId) {
+        setIssueLoading(false);
+        return;
+      }
 
-    setFormData((previousData) => ({
-      ...previousData,
-      [name]: value,
-    }));
-  };
+      try {
+        const response = await api.get(
+          `/issues/${issueId}`
+        );
+
+        setIssue(response.data.issue);
+      } catch (error) {
+        setError(
+          error.response?.data?.message ||
+            "Failed to load selected issue"
+        );
+      } finally {
+        setIssueLoading(false);
+      }
+    };
+
+    fetchIssue();
+  }, [issueId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!issueId) {
+      setError(
+        "Please select a legal issue before creating a complaint."
+      );
+
+      return;
+    }
 
     try {
       setLoading(true);
       setError("");
 
-      await api.post("/complaints", formData);
+      await api.post("/complaints", {
+        issue: issueId,
+  title: issue.title,
+  description,
+      });
 
       navigate("/complaints");
     } catch (error) {
@@ -43,39 +83,63 @@ function CreateComplaint() {
     }
   };
 
+  if (issueLoading) {
+    return <p>Loading selected issue...</p>;
+  }
+
+  if (!issueId) {
+    return (
+      <div>
+        <h1>Create Complaint</h1>
+
+        <p>
+          Please select a legal issue before creating
+          a complaint.
+        </p>
+
+        <Link to="/categories">
+          Browse Legal Guidance
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div>
       <h1>Create Complaint</h1>
 
+      {error && <p>{error}</p>}
+
+      {issue && (
+        <div>
+          <h2>Selected Legal Issue</h2>
+
+          <h3>{issue.title}</h3>
+
+          <p>{issue.description}</p>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit}>
         <div>
-          <label>Complaint Title</label>
-
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            placeholder="Enter complaint title"
-          />
-        </div>
-
-        <div>
-          <label>Description</label>
+          <label>Complaint Description</label>
 
           <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            placeholder="Describe your complaint"
+            value={description}
+            onChange={(e) =>
+              setDescription(e.target.value)
+            }
+            placeholder="Describe your complaint in detail"
+            required
           />
         </div>
 
-        {error && <p>{error}</p>}
-
-        <button type="submit" disabled={loading}>
+        <button
+          type="submit"
+          disabled={loading}
+        >
           {loading
-            ? "Submitting Complaint..."
+            ? "Submitting..."
             : "Submit Complaint"}
         </button>
       </form>

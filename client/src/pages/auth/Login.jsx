@@ -41,6 +41,9 @@ function Login() {
         formData.password
       );
 
+console.log("LOGGED IN USER:", loggedInUser);
+console.log("ROLE:", loggedInUser.role);
+
       if (loggedInUser.role === "admin") {
         navigate("/admin/dashboard");
       } else {

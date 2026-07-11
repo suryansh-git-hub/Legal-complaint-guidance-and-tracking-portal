@@ -14,6 +14,9 @@ import GuidanceDetails from "./pages/public/GuidanceDetails";
 import CreateComplaint from "./pages/user/CreateComplaint";
 import MyComplaints from "./pages/user/MyComplaints";
 import ComplaintDetails from "./pages/user/ComplaintDetails";
+import ComplaintTracking from "./pages/user/ComplaintTracking";
+import AllComplaints from "./pages/admin/AllComplaints";
+import AdminComplaintDetails from "./pages/admin/AdminComplaintDetails";
 
 function App() {
   return (
@@ -48,6 +51,9 @@ function App() {
 
     <Route path="/complaints" element={<MyComplaints />} />
 
+
+    <Route path="/complaints/tracking"  element={<ComplaintTracking />}/>
+
     <Route path="/complaints/:id"  element={<ComplaintDetails />} />
           </Route>
         </Route>
@@ -56,12 +62,12 @@ function App() {
 
         <Route element={<AdminRoute />}>
           <Route element={<MainLayout />}>
-            <Route
-              path="/admin/dashboard"
-              element={<AdminDashboard />}
-            />
+            <Route path="/admin/dashboard"  element={<AdminDashboard />} />
           </Route>
+
+            <Route path="/admin/complaints" element={<AllComplaints />}/>
         </Route>
+         <Route path="/admin/complaints/:id" element={<AdminComplaintDetails />}/>
       </Routes>
     </BrowserRouter>
   );

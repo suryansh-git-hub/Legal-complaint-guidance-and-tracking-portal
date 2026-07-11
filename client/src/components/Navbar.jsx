@@ -13,7 +13,6 @@ function Navbar() {
   const handleLogout = async () => {
     try {
       await logout();
-
       navigate("/login");
     } catch (error) {
       console.error("Logout failed:", error);
@@ -28,7 +27,10 @@ function Navbar() {
 
       <div>
         <Link to="/">Home</Link>
-        <Link to="/categories"> Legal Guidance </Link>
+
+        <Link to="/categories">
+          Legal Guidance
+        </Link>
 
         {!user && (
           <>
@@ -42,16 +44,28 @@ function Navbar() {
           </>
         )}
 
-        {user && user.role === "user" && (
-          <Link to="/dashboard">
-            Dashboard
-          </Link>
+        {user?.role === "user" && (
+          <>
+            <Link to="/dashboard">
+              Dashboard
+            </Link>
+
+            <Link to="/complaints">
+              My Complaints
+            </Link>
+          </>
         )}
 
-        {user && user.role === "admin" && (
-          <Link to="/admin/dashboard">
-            Admin Dashboard
-          </Link>
+        {user?.role === "admin" && (
+          <>
+            <Link to="/admin/dashboard">
+              Admin Dashboard
+            </Link>
+
+            <Link to="/admin/complaints">
+              All Complaints
+            </Link>
+          </>
         )}
 
         {user && (

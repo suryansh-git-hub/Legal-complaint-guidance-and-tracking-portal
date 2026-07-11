@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 import api from "../../api/axios";
 
-function AllComplaints() {
+function ComplaintTracking() {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -14,15 +14,13 @@ function AllComplaints() {
         setLoading(true);
         setError("");
 
-        const response = await api.get(
-          "/admin/complaints"
-        );
+        const response = await api.get("/complaints");
 
         setComplaints(response.data.complaints);
       } catch (error) {
         setError(
           error.response?.data?.message ||
-            "Failed to load complaints"
+            "Failed to load complaint tracking"
         );
       } finally {
         setLoading(false);
@@ -33,7 +31,7 @@ function AllComplaints() {
   }, []);
 
   if (loading) {
-    return <p>Loading complaints...</p>;
+    return <p>Loading complaint tracking...</p>;
   }
 
   if (error) {
@@ -42,14 +40,20 @@ function AllComplaints() {
 
   return (
     <div>
-      <h1>All Complaints</h1>
+      <h1>Track My Complaints</h1>
 
       <p>
-        View and manage complaints submitted by users.
+        Check the current progress of your submitted complaints.
       </p>
 
       {complaints.length === 0 ? (
-        <p>No complaints found.</p>
+        <div>
+          <p>You have not submitted any complaints yet.</p>
+
+          <Link to="/complaints/new">
+            Create Complaint
+          </Link>
+        </div>
       ) : (
         <div>
           {complaints.map((complaint) => (
@@ -57,32 +61,20 @@ function AllComplaints() {
               <h2>{complaint.title}</h2>
 
               <p>
-                User:{" "}
-                {complaint.user?.name ||
-                  "Unknown User"}
+                Current Status: {complaint.status}
               </p>
 
               <p>
-                Email:{" "}
-                {complaint.user?.email ||
-                  "Not available"}
-              </p>
-
-              <p>
-                Status: {complaint.status}
-              </p>
-
-              <p>
-                Created:{" "}
+                Submitted:{" "}
                 {new Date(
                   complaint.createdAt
                 ).toLocaleDateString()}
               </p>
 
               <Link
-                to={`/admin/complaints/${complaint._id}`}
+                to={`/complaints/${complaint._id}`}
               >
-                View Complaint
+                View Tracking Details
               </Link>
             </div>
           ))}
@@ -92,4 +84,4 @@ function AllComplaints() {
   );
 }
 
-export default AllComplaints;
+export default ComplaintTracking;

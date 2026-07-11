@@ -49,7 +49,64 @@ function ComplaintDetails() {
     return <p>Complaint not found.</p>;
   }
 
-  return (
+  const statusSteps = [
+    "draft",
+    "submitted",
+    "in-progress",
+    "resolved",
+    "closed",
+  ];
+
+  const currentStep = statusSteps.indexOf(
+    complaint.status
+  );
+
+  // return (
+  //   <div>
+  //     <Link to="/complaints">
+  //       Back to My Complaints
+  //     </Link>
+
+  //     <h1>{complaint.title}</h1>
+
+  //     <p>{complaint.description}</p>
+
+  //     <div>
+  //       <h2>Complaint Status</h2>
+
+  //       <p>{complaint.status}</p>
+  //     </div>
+
+  //     <div>
+  //       <h2>Admin Remarks</h2>
+
+  //       <p>
+  //         {complaint.adminRemarks ||
+  //           "No remarks from the Legal Admin yet."}
+  //       </p>
+  //     </div>
+
+  //     <div>
+  //       <h2>Complaint Information</h2>
+
+  //       <p>
+  //         Created:{" "}
+  //         {new Date(
+  //           complaint.createdAt
+  //         ).toLocaleDateString()}
+  //       </p>
+
+  //       <p>
+  //         Last Updated:{" "}
+  //         {new Date(
+  //           complaint.updatedAt
+  //         ).toLocaleDateString()}
+  //       </p>
+  //     </div>
+  //   </div>
+  // );
+
+   return (
     <div>
       <Link to="/complaints">
         Back to My Complaints
@@ -59,22 +116,42 @@ function ComplaintDetails() {
 
       <p>{complaint.description}</p>
 
-      <div>
-        <h2>Complaint Status</h2>
+      <section>
+        <h2>Current Status</h2>
 
         <p>{complaint.status}</p>
-      </div>
+      </section>
 
-      <div>
+      <section>
+        <h2>Complaint Progress</h2>
+
+        {statusSteps.map((step, index) => (
+          <div key={step}>
+            <span>
+              {index <= currentStep ? "✓" : "○"}
+            </span>
+
+            <span>
+              {step
+                .replace("-", " ")
+                .replace(/\b\w/g, (letter) =>
+                  letter.toUpperCase()
+                )}
+            </span>
+          </div>
+        ))}
+      </section>
+
+      <section>
         <h2>Admin Remarks</h2>
 
         <p>
           {complaint.adminRemarks ||
             "No remarks from the Legal Admin yet."}
         </p>
-      </div>
+      </section>
 
-      <div>
+      <section>
         <h2>Complaint Information</h2>
 
         <p>
@@ -90,9 +167,10 @@ function ComplaintDetails() {
             complaint.updatedAt
           ).toLocaleDateString()}
         </p>
-      </div>
+      </section>
     </div>
   );
 }
+
 
 export default ComplaintDetails;

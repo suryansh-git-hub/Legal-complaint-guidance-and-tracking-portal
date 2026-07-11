@@ -135,8 +135,70 @@ const updateComplaintStatus = async (req, res) => {
   }
 };
 
+  const getAdminDashboard = async (req, res) => {
+  try {
+    const [
+      total,
+      draft,
+      submitted,
+      inProgress,
+      resolved,
+      closed,
+      recentComplaints,
+    ] = await Promise.all([
+      Complaint.countDocuments(),
+
+      Complaint.countDocuments({
+        status: "draft",
+      }),
+
+      Complaint.countDocuments({
+        status: "submitted",
+      }),
+
+      Complaint.countDocuments({
+        status: "in-progress",
+      }),
+
+      Complaint.countDocuments({
+        status: "resolved",
+      }),
+
+      Complaint.countDocuments({
+        status: "closed",
+      }),
+
+      Complaint.find()
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate("user", "name email"),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+
+      stats: {
+        total,
+        draft,
+        submitted,
+        inProgress,
+        resolved,
+        closed,
+      },
+
+      recentComplaints,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load admin dashboard",
+      error: error.message,
+    });
+  }
+};
 export {
   getAllComplaints,
   getAdminComplaintById,
   updateComplaintStatus,
+  getAdminDashboard
 };
