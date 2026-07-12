@@ -25,38 +25,78 @@ const complaintSchema = new mongoose.Schema(
 
     description: {
       type: String,
-      required: [true, "Complaint description is required"],
+      required: [
+        true,
+        "Complaint description is required",
+      ],
       trim: true,
       maxlength: 2000,
     },
 
     status: {
       type: String,
-      enum: ["draft", "submitted", "in-progress", "resolved", "closed"],
+      enum: [
+        "submitted",
+        "under-review",
+        "needs-information",
+        "in-progress",
+        "resolved",
+        "closed",
+      ],
       default: "submitted",
+    },
+
+    assessment: {
+      type: String,
+      enum: [
+        "pending",
+        "actionable",
+        "needs-information",
+        "not-actionable",
+      ],
+      default: "pending",
     },
 
     notes: {
       type: [String],
       default: [],
     },
-    adminRemarks: {
-  type: String,
-  trim: true,
-  default: "",
-},
 
-reviewedBy: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "User",
-  default: null,
-},
+    adminRemarks: {
+      type: String,
+      trim: true,
+      maxlength: 1000,
+      default: "",
+    },
+
+    actionTaken: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: "",
+    },
+
+    resolutionSummary: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: "",
+    },
+
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-const Complaint = mongoose.model("Complaint", complaintSchema);
+const Complaint = mongoose.model(
+  "Complaint",
+  complaintSchema
+);
 
 export default Complaint;

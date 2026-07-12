@@ -4,7 +4,7 @@ import {
   ArrowRight,
   CalendarDays,
   FileSearch,
-  FileText,
+
   LoaderCircle,
   Search,
   User,

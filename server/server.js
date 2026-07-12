@@ -12,6 +12,7 @@ import {
   errorHandler,
 } from "./middleware/errorMiddleware.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import path from "path";
 
 dotenv.config();
 
@@ -39,6 +40,10 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/issues", issueRoutes);
 app.use("/api/complaints", complaintRoutes);
+app.use(
+  "/uploads",
+  express.static(path.join(process.cwd(), "uploads"))
+);
 app.use(notFound);
 app.use(errorHandler);
 

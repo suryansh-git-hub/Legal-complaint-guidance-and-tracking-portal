@@ -1,32 +1,64 @@
 import express from "express";
+import { body } from "express-validator";
 
 import {
   createComplaint,
   getComplaints,
   getComplaintById,
   updateComplaint,
-  deleteComplaint,getComplaintStats,
+  deleteComplaint,
+  getComplaintStats,
 } from "../controllers/complaintController.js";
 
-import { protect} from "../middleware/authMiddleware.js";
-import { body } from "express-validator";
+import {
+  protect,
+} from "../middleware/authMiddleware.js";
+
 import {
   validateRequest,
 } from "../middleware/validationMiddleware.js";
+
+import {
+  uploadComplaintDocuments,
+} from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
 router.use(protect);
 
+/* ==============================
+   Complaint Statistics
+================================ */
+
 router.get("/stats", getComplaintStats);
 
-router.route("/").post(createComplaint).get(getComplaints);
+/* ==============================
+   Create Complaint
+   Get User Complaints
+================================ */
+
+router
+  .route("/")
+  .post(
+    uploadComplaintDocuments.array(
+      "documents",
+      5
+    ),
+    createComplaint
+  )
+  .get(getComplaints);
+
+/* ==============================
+   Single Complaint Routes
+================================ */
 
 router
   .route("/:id")
+
   .get(getComplaintById)
 
-  .put(   [
+  .put(
+    [
       body("title")
         .optional()
         .trim()
@@ -55,9 +87,10 @@ router
         .withMessage("Notes must be an array"),
     ],
 
-    validateRequest,updateComplaint)
+    validateRequest,
+    updateComplaint
+  )
+
   .delete(deleteComplaint);
-
-
 
 export default router;

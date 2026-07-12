@@ -2,15 +2,22 @@ import mongoose from "mongoose";
 
 import Complaint from "../models/Complaint.js";
 import Issue from "../models/Issue.js";
+import fs from "fs/promises";
 
-const createComplaint = async (req, res) => {
+import ComplaintDocument from "../models/ComplaintDocument.js";
+import DocumentRequest from "../models/DocumentRequest.js";
+
+const createComplaint = async (req, res, next) => {
+  let complaint = null;
+
   try {
     const { issue, title, description, notes } = req.body;
 
     if (!issue || !title || !description) {
       return res.status(400).json({
         success: false,
-        message: "Issue, title and description are required",
+        message:
+          "Issue, title and description are required",
       });
     }
 
@@ -21,16 +28,7 @@ const createComplaint = async (req, res) => {
       });
     }
 
-    const existingIssue = await Issue.findById(issue);
-
-    if (!existingIssue) {
-      return res.status(404).json({
-        success: false,
-        message: "Issue not found",
-      });
-    }
-
-    const complaint = await Complaint.create({
+    complaint = await Complaint.create({
       user: req.user._id,
       issue,
       title,
@@ -38,19 +36,70 @@ const createComplaint = async (req, res) => {
       notes,
     });
 
+    let documents = [];
+
+    if (req.files && req.files.length > 0) {
+      const documentData = req.files.map((file) => ({
+          complaint: complaint._id,
+  uploadedBy: req.user._id,
+  documentRequest: null,
+  documentType: "initial",
+
+  originalName: file.originalname,
+  fileName: file.filename,
+  filePath: file.path,
+
+  fileUrl: `/uploads/complaints/${file.filename}`,
+
+  mimeType: file.mimetype,
+  fileSize: file.size,
+      }));
+
+      documents =
+        await ComplaintDocument.insertMany(
+          documentData
+        );
+    }
+
+    const populatedComplaint =
+      await Complaint.findById(complaint._id)
+        .populate("issue")
+        .populate("user", "name email");
+
     return res.status(201).json({
       success: true,
-      message: "Complaint tracking record created successfully",
-      complaint,
+      message: "Complaint created successfully",
+      complaint: populatedComplaint,
+      documents,
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message,
-    });
+    /*
+      If ComplaintDocument creation fails after the
+      complaint was created, remove the complaint.
+    */
+
+    if (complaint) {
+      await Complaint.findByIdAndDelete(
+        complaint._id
+      ).catch(() => {});
+    }
+
+    /*
+      Remove uploaded files if complaint creation
+      or document saving fails.
+    */
+
+    if (req.files?.length > 0) {
+      await Promise.all(
+        req.files.map((file) =>
+          fs.unlink(file.path).catch(() => {})
+        )
+      );
+    }
+
+    next(error);
   }
-};
+}; 
 
 const getComplaints = async (req, res) => {
   try {
@@ -81,27 +130,14 @@ const getComplaints = async (req, res) => {
   }
 };
 
-const getComplaintById = async (req, res) => {
+const getComplaintById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid complaint ID",
-      });
-    }
-
     const complaint = await Complaint.findOne({
-      _id: id,
+      _id: req.params.id,
       user: req.user._id,
-    }).populate({
-      path: "issue",
-      populate: {
-        path: "category",
-        select: "name",
-      },
-    });
+    })
+      .populate("issue")
+      .populate("user", "name email");
 
     if (!complaint) {
       return res.status(404).json({
@@ -110,16 +146,26 @@ const getComplaintById = async (req, res) => {
       });
     }
 
+    const documents = await ComplaintDocument.find({
+      complaint: complaint._id,
+    })
+      .populate("uploadedBy", "name email")
+      .sort({ createdAt: -1 });
+
+      const documentRequests = await DocumentRequest.find({
+  complaint: complaint._id,
+})
+  .populate("requestedBy", "name email")
+  .sort({ createdAt: -1 });
+
     return res.status(200).json({
       success: true,
       complaint,
+      documents,
+        documentRequests,
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message,
-    });
+    next(error);
   }
 };
 
