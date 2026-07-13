@@ -344,11 +344,134 @@ const deleteComplaint = async (req, res) => {
   }
 };
 
-export {
-  createComplaint,
-  getComplaints,
-  getComplaintById,
-  updateComplaint,
-  deleteComplaint,
-  getComplaintStats
+const uploadRequestedDocument = async (
+  req,
+  res,
+  next
+) => {
+  try {
+    const { id, requestId } = req.params;
+
+    // Check IDs
+    if (
+      !mongoose.Types.ObjectId.isValid(id) ||
+      !mongoose.Types.ObjectId.isValid(requestId)
+    ) {
+      if (req.file) {
+        await fs.unlink(req.file.path).catch(() => {});
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: "Invalid complaint or document request ID",
+      });
+    }
+
+    // Make sure complaint belongs to logged-in user
+    const complaint = await Complaint.findOne({
+      _id: id,
+      user: req.user._id,
+    });
+
+    if (!complaint) {
+      if (req.file) {
+        await fs.unlink(req.file.path).catch(() => {});
+      }
+
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    // Find request belonging to this complaint
+    const documentRequest =
+      await DocumentRequest.findOne({
+        _id: requestId,
+        complaint: complaint._id,
+      });
+
+    if (!documentRequest) {
+      if (req.file) {
+        await fs.unlink(req.file.path).catch(() => {});
+      }
+
+      return res.status(404).json({
+        success: false,
+        message: "Document request not found",
+      });
+    }
+
+    // Only pending requests can receive uploads
+    if (documentRequest.status !== "pending") {
+      if (req.file) {
+        await fs.unlink(req.file.path).catch(() => {});
+      }
+
+      return res.status(400).json({
+        success: false,
+        message:
+          "This document request has already been submitted",
+      });
+    }
+
+    // Make sure a file was uploaded
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Please upload a document",
+      });
+    }
+
+    // Create document record
+    const complaintDocument =
+      await ComplaintDocument.create({
+        complaint: complaint._id,
+        uploadedBy: req.user._id,
+
+        documentRequest: documentRequest._id,
+        documentType: "requested",
+
+        originalName: req.file.originalname,
+        fileName: req.file.filename,
+        filePath: req.file.path,
+
+        fileUrl: `/uploads/complaints/${req.file.filename}`,
+
+        mimeType: req.file.mimetype,
+        fileSize: req.file.size,
+      });
+
+    // Update request status
+    documentRequest.status = "submitted";
+    documentRequest.submittedAt = new Date();
+
+    await documentRequest.save();
+
+    const populatedDocument =
+      await ComplaintDocument.findById(
+        complaintDocument._id
+      )
+        .populate("uploadedBy", "name email")
+        .populate(
+          "documentRequest",
+          "documentName instructions status"
+        );
+
+    return res.status(201).json({
+      success: true,
+      message:
+        "Requested document uploaded successfully",
+      document: populatedDocument,
+      documentRequest,
+    });
+  } catch (error) {
+    if (req.file) {
+      await fs.unlink(req.file.path).catch(() => {});
+    }
+
+    next(error);
+  }
 };
+
+export { createComplaint, getComplaints,getComplaintById, updateComplaint, deleteComplaint, getComplaintStats,uploadRequestedDocument };

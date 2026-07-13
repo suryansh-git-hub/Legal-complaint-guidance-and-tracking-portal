@@ -1,13 +1,9 @@
 import express from "express";
 import { body } from "express-validator";
 
-import {
-  createComplaint,
-  getComplaints,
-  getComplaintById,
-  updateComplaint,
-  deleteComplaint,
-  getComplaintStats,
+import { createComplaint,getComplaints,getComplaintById,
+  updateComplaint,deleteComplaint,
+  getComplaintStats,uploadRequestedDocument
 } from "../controllers/complaintController.js";
 
 import {
@@ -51,6 +47,11 @@ router
 /* ==============================
    Single Complaint Routes
 ================================ */
+router.post(
+  "/:id/document-requests/:requestId/upload",
+  uploadComplaintDocuments.single("document"),
+  uploadRequestedDocument
+); 
 
 router
   .route("/:id")

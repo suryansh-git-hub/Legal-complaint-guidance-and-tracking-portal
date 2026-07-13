@@ -179,6 +179,7 @@ const getAdminComplaintById = async (
     next(error);
   }
 };
+
 const updateComplaintStatus = async (req, res) => {
   try {
     const { status, adminRemarks } = req.body;
@@ -194,37 +195,29 @@ const updateComplaintStatus = async (req, res) => {
       });
     }
 
-    // const validTransitions = {
-    //   submitted: ["in-progress"],
-    //   "in-progress": ["resolved"],
-    //   resolved: ["closed"],
-    //   closed: [],
-    // };
-
     const validTransitions = {
-  submitted: [],
-  "under-review": [],
-  "needs-information": ["under-review"],
-  "in-progress": ["resolved"],
-  resolved: ["closed"],
-  closed: [],
-};
+      submitted: ["in-progress"],
+      "in-progress": ["resolved"],
+      resolved: ["closed"],
+      closed: [],
+    };
 
-    if (
-      status &&
-      status !== complaint.status &&
-      !validTransitions[complaint.status]?.includes(status)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: `Cannot change complaint status from ${complaint.status} to ${status}`,
-      });
-    }
+    // Validate status only when it is actually being changed
+    if (status && status !== complaint.status) {
+      const allowedNextStatuses =
+        validTransitions[complaint.status] || [];
 
-    if (status) {
+      if (!allowedNextStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot change complaint status from ${complaint.status} to ${status}`,
+        });
+      }
+
       complaint.status = status;
     }
 
+    // Update admin remarks separately
     if (adminRemarks !== undefined) {
       complaint.adminRemarks = adminRemarks;
     }
@@ -240,9 +233,11 @@ const updateComplaintStatus = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to update complaint",
+      error: error.message,
     });
   }
 };
+
   const getAdminDashboard = async (req, res) => {
   try {
     const [
@@ -353,7 +348,7 @@ const assessComplaint = async (req, res, next) => {
     }
 
     if (assessment === "needs-information") {
-      complaint.status = "needs-information";
+      complaint.status = "submitted";
     }
 
     if (assessment === "not-actionable") {
@@ -399,13 +394,13 @@ const createDocumentRequest = async (req, res, next) => {
       });
     }
 
-    if (complaint.status !== "needs-information") {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Complaint is not waiting for additional information",
-      });
-    }
+    // if (complaint.status !== "needs-information") {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message:
+    //       "Complaint is not waiting for additional information",
+    //   });
+    // }
 
     const existingPendingRequest =
       await DocumentRequest.findOne({
@@ -442,6 +437,141 @@ const createDocumentRequest = async (req, res, next) => {
   }
 };
 
+const reviewRequestedDocument = async (
+  req,res, next) => {
+  try {
+    const { id, requestId } = req.params;
+    const { status } = req.body;
+
+    const complaint = await Complaint.findById(id);
+
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    const documentRequest =
+      await DocumentRequest.findOne({
+        _id: requestId,
+        complaint: complaint._id,
+      });
+
+    if (!documentRequest) {
+      return res.status(404).json({
+        success: false,
+        message: "Document request not found",
+      });
+    }
+
+    if (documentRequest.status !== "submitted") {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Only submitted documents can be reviewed",
+      });
+    }
+
+    if (!["accepted", "rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Review status must be accepted or rejected",
+      });
+    }
+
+    const uploadedDocument =
+      await ComplaintDocument.findOne({
+        complaint: complaint._id,
+        documentRequest: documentRequest._id,
+        documentType: "requested",
+      });
+
+    if (!uploadedDocument) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Uploaded document not found for this request",
+      });
+    }
+
+    documentRequest.status = status;
+    documentRequest.reviewedAt = new Date();
+
+    uploadedDocument.reviewStatus = status;
+    uploadedDocument.reviewedBy = req.user._id;
+    uploadedDocument.reviewedAt = new Date();
+
+if (status === "accepted") {
+  complaint.status = "in-progress";
+}
+
+    await Promise.all([
+      documentRequest.save(),
+      uploadedDocument.save(),
+      complaint.save(),   
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: `Document ${status} successfully`,
+      documentRequest,
+      document: uploadedDocument,
+      complaint
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const resolveComplaint = async (req, res, next) => {
+  try {
+    const { actionTaken, resolutionSummary } = req.body;
+
+    const complaint = await Complaint.findById(req.params.id);
+
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    // Only in-progress complaints can be resolved
+    if (complaint.status !== "in-progress") {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Only in-progress complaints can be resolved",
+      });
+    }
+
+    complaint.actionTaken = actionTaken;
+    complaint.resolutionSummary = resolutionSummary;
+    complaint.resolvedAt = new Date();
+    complaint.status = "resolved";
+    complaint.reviewedBy = req.user._id;
+
+    await complaint.save();
+
+    const updatedComplaint = await Complaint.findById(
+      complaint._id
+    )
+      .populate("user", "name email")
+      .populate("issue")
+      .populate("reviewedBy", "name email");
+
+    return res.status(200).json({
+      success: true,
+      message: "Complaint resolved successfully",
+      complaint: updatedComplaint,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
-  getAllComplaints,getAdminComplaintById,updateComplaintStatus,getAdminDashboard,assessComplaint,createDocumentRequest
+  getAllComplaints,getAdminComplaintById,updateComplaintStatus,getAdminDashboard,assessComplaint,createDocumentRequest,reviewRequestedDocument,resolveComplaint,
 };

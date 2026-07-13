@@ -1,14 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  ArrowLeft,
-  CalendarDays,
-  Check,
-  Clock,ExternalLink,
-  FileText,
-  LoaderCircle,
-  MessageSquareText,
-  Scale,
+  ArrowLeft,CalendarDays,
+  Check, Clock,ExternalLink, FileText, LoaderCircle, MessageSquareText, Scale,
 } from "lucide-react";
 
 import api from "../../api/axios";
@@ -21,7 +15,10 @@ function ComplaintDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [documents, setDocuments] = useState([]);
-   console.log(documents)
+  const [documentRequests, setDocumentRequests] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState({});
+const [uploadingRequestId, setUploadingRequestId] = useState(null);
+const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
     const fetchComplaint = async () => {
@@ -35,6 +32,7 @@ function ComplaintDetails() {
 
         setComplaint(response.data.complaint);
         setDocuments(response.data.documents || []);
+        setDocumentRequests(response.data.documentRequests || []);
       } catch (error) {
         setError(
           error.response?.data?.message ||
@@ -62,6 +60,68 @@ function ComplaintDetails() {
         letter.toUpperCase()
       );
   };
+
+  const handleRequestedDocumentUpload = async (requestId) => {
+  const file = selectedFiles[requestId];
+
+  if (!file) {
+    setUploadError("Please select a document first.");
+    return;
+  }
+
+  try {
+    setUploadingRequestId(requestId);
+    setUploadError("");
+
+    const formData = new FormData();
+
+    formData.append("document", file);
+
+    const response = await api.post(
+      `/complaints/${id}/document-requests/${requestId}/upload`,
+      formData
+    );
+
+    const uploadedDocument = response.data.document;
+
+    // Add uploaded document to Supporting Documents
+    setDocuments((previousDocuments) => [
+      uploadedDocument,
+      ...previousDocuments,
+    ]);
+
+    // Change request status in UI
+    setDocumentRequests((previousRequests) =>
+      previousRequests.map((request) =>
+        request._id === requestId
+          ? {
+              ...request,
+              status: "submitted",
+              submittedAt: new Date().toISOString(),
+            }
+          : request
+      )
+    );
+
+    // Remove selected file
+    setSelectedFiles((previousFiles) => {
+      const updatedFiles = {
+        ...previousFiles,
+      };
+
+      delete updatedFiles[requestId];
+
+      return updatedFiles;
+    });
+  } catch (error) {
+    setUploadError(
+      error.response?.data?.message ||
+        "Failed to upload requested document"
+    );
+  } finally {
+    setUploadingRequestId(null);
+  }
+};
 
   if (loading) {
     return (
@@ -273,15 +333,9 @@ function ComplaintDetails() {
                 </p>
               </div>
             </div>
-<p className="text-xs break-all text-red-600">
-  {document.fileUrl}
-</p>
 
-<p className="text-xs break-all text-green-600">
-  {`${import.meta.env.VITE_UPLOADS_BASE_URL}${document.fileUrl}`}
-</p>
             <a
-href={`${import.meta.env.VITE_UPLOADS_BASE_URL}${document.fileUrl}`}
+href={`${import.meta.env.VITE_UPLOADS_BASE_URL || "http://localhost:5000"}${document.fileUrl}`}
   target="_blank"
   rel="noopener noreferrer"
 
@@ -303,6 +357,106 @@ href={`${import.meta.env.VITE_UPLOADS_BASE_URL}${document.fileUrl}`}
     )}
   </div>
 </section>
+
+{documentRequests.length > 0 && (
+  <section className="rounded-xl border border-amber-200 bg-white p-6 shadow-sm">
+    <div className="border-b border-gray-200 pb-4">
+      <h2 className="text-lg font-semibold text-gray-900">
+        Additional Documents Required
+      </h2>
+
+      <p className="mt-1 text-sm text-gray-500">
+        The administrator has requested additional information
+        for your complaint.
+      </p>
+    </div>
+
+    <div className="mt-5 space-y-4">
+      {documentRequests.map((request) => (
+        <div
+          key={request._id}
+          className="rounded-lg border border-amber-200 bg-amber-50 p-4"
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="font-medium text-gray-900">
+                {request.documentName}
+              </p>
+
+              {request.instructions && (
+                <p className="mt-2 text-sm leading-6 text-gray-600">
+                  {request.instructions}
+                </p>
+              )}
+            </div>
+
+            <span className="w-fit rounded-full bg-amber-100 px-3 py-1 text-xs font-medium capitalize text-amber-700">
+              {request.status}
+            </span>
+          </div>
+
+         {request.status === "pending" && (
+  <div className="mt-4 border-t border-amber-200 pt-4">
+    <p className="text-sm text-gray-600">
+      Please upload the requested document so the
+      administrator can continue reviewing your complaint.
+    </p>
+
+    <div className="mt-4">
+      <input
+        type="file"
+        onChange={(e) =>
+          setSelectedFiles((previousFiles) => ({
+            ...previousFiles,
+            [request._id]: e.target.files[0],
+          }))
+        }
+        className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
+      />
+    </div>
+
+    {selectedFiles[request._id] && (
+      <p className="mt-2 text-xs text-gray-500">
+        Selected: {selectedFiles[request._id].name}
+      </p>
+    )}
+
+    {uploadError && (
+      <p className="mt-3 text-sm text-red-600">
+        {uploadError}
+      </p>
+    )}
+
+    <button
+      type="button"
+      onClick={() =>
+        handleRequestedDocumentUpload(request._id)
+      }
+      disabled={
+        uploadingRequestId === request._id ||
+        !selectedFiles[request._id]
+      }
+      className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {uploadingRequestId === request._id ? (
+        <>
+          <LoaderCircle className="h-4 w-4 animate-spin" />
+          Uploading...
+        </>
+      ) : (
+        <>
+          <FileText className="h-4 w-4" />
+          Upload Document
+        </>
+      )}
+    </button>
+  </div>
+)}
+        </div>
+      ))}
+    </div>
+  </section>
+)}
 
           {/* Admin Remarks */}
 

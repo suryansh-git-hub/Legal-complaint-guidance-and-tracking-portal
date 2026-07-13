@@ -37,8 +37,6 @@ const complaintSchema = new mongoose.Schema(
       type: String,
       enum: [
         "submitted",
-        "under-review",
-        "needs-information",
         "in-progress",
         "resolved",
         "closed",
@@ -82,6 +80,11 @@ const complaintSchema = new mongoose.Schema(
       maxlength: 2000,
       default: "",
     },
+     
+    resolvedAt: {
+  type: Date,
+  default: null,
+},
 
     reviewedBy: {
       type: mongoose.Schema.Types.ObjectId,
