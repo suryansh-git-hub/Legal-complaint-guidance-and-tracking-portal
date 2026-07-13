@@ -1,15 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  FileText,
-  Send,
-  LoaderCircle,
-  CircleCheckBig,
-  Archive,
-  ArrowRight,
-  ShieldCheck,
-  Users,
-} from "lucide-react";
+import { FileText, Send,LoaderCircle,CircleCheckBig, Archive, ArrowRight,ShieldCheck, Users,CircleHelp,} from "lucide-react";
 
 import api from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
@@ -60,6 +51,9 @@ function AdminDashboard() {
       case "submitted":
         return "bg-blue-50 text-blue-700";
 
+          case "needs-information":
+      return "bg-orange-50 text-orange-700";
+      
       case "in-progress":
         return "bg-amber-50 text-amber-700";
 
@@ -108,6 +102,12 @@ function AdminDashboard() {
       icon: Send,
     },
     {
+    title: "Needs Information",
+    value:
+      dashboardData?.stats?.needsInformation ?? 0,
+    icon: CircleHelp,
+  },
+    {
       title: "In Progress",
       value: dashboardData?.stats?.inProgress ?? 0,
       icon: LoaderCircle,
@@ -152,7 +152,7 @@ function AdminDashboard() {
           Complaint Overview
         </h2>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
           {stats.map((stat) => {
             const Icon = stat.icon;
 

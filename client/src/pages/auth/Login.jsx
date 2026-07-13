@@ -160,7 +160,14 @@ console.log("ROLE:", loggedInUser.role);
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
         </div>
-
+          <div className="text-right">
+  <Link
+    to="/forgot-password"
+    className="text-sm font-medium text-blue-600 hover:text-blue-700"
+  >
+    Forgot Password?
+  </Link>
+</div>
         {error && (
           <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
             {error}

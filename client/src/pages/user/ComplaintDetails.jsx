@@ -253,7 +253,8 @@ const handleFeedbackSubmit = async (e) => {
 
       {/* Progress Tracker */}
 
-      <section className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+      {complaint.assessment !== "not-actionable" && (
+  <section className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
         <div className="flex items-center gap-3">
           <Clock className="h-5 w-5 text-blue-600" />
 
@@ -324,7 +325,7 @@ const handleFeedbackSubmit = async (e) => {
             })}
           </div>
         </div>
-      </section>
+      </section> )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         {/* Main Complaint Information */}
@@ -510,7 +511,8 @@ href={`${import.meta.env.VITE_UPLOADS_BASE_URL || "http://localhost:5000"}${docu
 
     {/* Final Resolution */}
 
-{["resolved", "closed"].includes(complaint.status) && (
+{["resolved", "closed"].includes(complaint.status) &&
+  complaint.assessment !== "not-actionable" && (
   <section className="rounded-xl border border-green-200 bg-white p-6 shadow-sm">
     <div className="flex items-center gap-3 border-b border-gray-200 pb-4">
       <Check className="h-5 w-5 text-green-600" />
@@ -724,6 +726,36 @@ href={`${import.meta.env.VITE_UPLOADS_BASE_URL || "http://localhost:5000"}${docu
       )}
     </section>
   )}
+
+  {/* Not Actionable Decision */}
+
+{complaint.assessment === "not-actionable" && (
+  <section className="rounded-xl border border-amber-200 bg-white p-6 shadow-sm">
+    <div className="border-b border-gray-200 pb-4">
+      <h2 className="text-lg font-semibold text-gray-900">
+        Complaint Review Decision
+      </h2>
+
+      <p className="mt-1 text-sm text-gray-500">
+        Your complaint has been reviewed by the administrator.
+      </p>
+    </div>
+
+    <div className="mt-5">
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <p className="text-sm font-medium text-amber-800">
+          This complaint was marked as Not Actionable.
+        </p>
+
+        <p className="mt-2 text-sm leading-6 text-gray-700">
+          Based on the information and supporting documents
+          provided, no further action will be taken on this
+          complaint.
+        </p>
+      </div>
+    </div>
+  </section>
+)}
 
           {/* Admin Remarks */}
 

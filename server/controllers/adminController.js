@@ -241,22 +241,17 @@ const updateComplaintStatus = async (req, res) => {
   const getAdminDashboard = async (req, res) => {
   try {
     const [
-      total,
-      draft,
-      submitted,
-      inProgress,
-      resolved,
-      closed,
-      recentComplaints,
+      total,  submitted,  needsInformation,inProgress,
+      resolved,  closed,  recentComplaints,
     ] = await Promise.all([
       Complaint.countDocuments(),
 
       Complaint.countDocuments({
-        status: "draft",
+        status: "submitted",
       }),
 
-      Complaint.countDocuments({
-        status: "submitted",
+          Complaint.countDocuments({
+        status: "needs-information",
       }),
 
       Complaint.countDocuments({
@@ -282,12 +277,8 @@ const updateComplaintStatus = async (req, res) => {
 
       stats: {
         total,
-        draft,
-        submitted,
-        inProgress,
-        resolved,
-        closed,
-      },
+        submitted,needsInformation,
+        inProgress, resolved, closed,},
 
       recentComplaints,
     });

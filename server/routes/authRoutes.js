@@ -5,7 +5,8 @@ import {
   registerUser,
   loginUser,
   logoutUser,
-  getUserProfile,
+  getUserProfile,forgotPassword,
+  resetPassword,
 } from "../controllers/authController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
@@ -70,5 +71,31 @@ router.post(
 router.post("/logout", logoutUser);
 
 router.get("/profile", protect, getUserProfile);
+
+router.post(
+  "/forgot-password",
+  [
+    body("email")
+      .trim()
+      .isEmail()
+      .withMessage("Enter a valid email")
+      .normalizeEmail(),
+  ],
+  validateRequest,
+  forgotPassword
+);
+
+router.put(
+  "/reset-password/:token",
+  [
+    body("password")
+      .isLength({ min: 8 })
+      .withMessage(
+        "Password must contain at least 8 characters"
+      ),
+  ],
+  validateRequest,
+  resetPassword
+);
 
 export default router;

@@ -268,9 +268,7 @@ const deleteComplaint = async (req, res) => {
 
     const [
       totalComplaints,
-      draftComplaints,
-      submittedComplaints,
-      inProgressComplaints,
+      submittedComplaints,needsInformationComplaints,inProgressComplaints,
       resolvedComplaints,
       closedComplaints,
       recentComplaints,
@@ -278,15 +276,14 @@ const deleteComplaint = async (req, res) => {
       Complaint.countDocuments({
         user: userId,
       }),
-
-      Complaint.countDocuments({
-        user: userId,
-        status: "draft",
-      }),
-
       Complaint.countDocuments({
         user: userId,
         status: "submitted",
+      }),
+
+        Complaint.countDocuments({
+        user: userId,
+        status: "needs-information",
       }),
 
       Complaint.countDocuments({
@@ -326,8 +323,10 @@ const deleteComplaint = async (req, res) => {
 
       stats: {
         total: totalComplaints,
-        draft: draftComplaints,
         submitted: submittedComplaints,
+               needsInformation:
+          needsInformationComplaints,
+ 
         inProgress: inProgressComplaints,
         resolved: resolvedComplaints,
         closed: closedComplaints,

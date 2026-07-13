@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FileText,
-  Clock,
+
   Send,
   LoaderCircle,
-  CircleCheckBig,
+  CircleCheckBig,CircleHelp,
   Archive,
   Plus,
   ArrowRight,
@@ -76,16 +76,19 @@ function UserDashboard() {
       value: dashboardData?.stats?.total ?? 0,
       icon: FileText,
     },
-    {
-      title: "Draft",
-      value: dashboardData?.stats?.draft ?? 0,
-      icon: Clock,
-    },
+
     {
       title: "Submitted",
       value: dashboardData?.stats?.submitted ?? 0,
       icon: Send,
     },
+      {
+    title: "Needs Information",
+    value:
+      dashboardData?.stats?.needsInformation ?? 0,
+    icon: CircleHelp,
+  },
+
     {
       title: "In Progress",
       value: dashboardData?.stats?.inProgress ?? 0,

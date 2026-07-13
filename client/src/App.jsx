@@ -8,6 +8,9 @@ import AdminRoute from "./routes/AdminRoute";
 import Home from "./pages/public/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
+
 import Categories from "./pages/public/Categories";
 import Issues from "./pages/public/Issues";
 import GuidanceDetails from "./pages/public/GuidanceDetails";
@@ -31,6 +34,14 @@ function App() {
     {/* Auth Routes */}
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Register />} />
+    <Route
+  path="/forgot-password"
+  element={<ForgotPassword />}
+/>
+<Route
+  path="/reset-password/:token"
+  element={<ResetPassword />}
+/>
 
     {/* User Protected Routes */}
     <Route element={<ProtectedRoute />}>
