@@ -473,5 +473,90 @@ const uploadRequestedDocument = async (
     next(error);
   }
 };
+const submitComplaintFeedback = async (
+  req,
+  res,
+  next
+) => {
+  try {
+    const { id } = req.params;
+    const { satisfied, feedbackComment } = req.body;
 
-export { createComplaint, getComplaints,getComplaintById, updateComplaint, deleteComplaint, getComplaintStats,uploadRequestedDocument };
+    // Validate complaint ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid complaint ID",
+      });
+    }
+
+    // Make sure complaint belongs to logged-in user
+    const complaint = await Complaint.findOne({
+      _id: id,
+      user: req.user._id,
+    });
+
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    // Feedback can only be submitted for resolved complaints
+    if (complaint.status !== "resolved") {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Feedback can only be submitted for resolved complaints",
+      });
+    }
+
+    // Make sure satisfied is actually a boolean
+    if (typeof satisfied !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Satisfied value must be true or false",
+      });
+    }
+
+    // Prevent multiple feedback submissions
+    // until admin revises the resolution
+    if (complaint.satisfied !== null) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Feedback has already been submitted",
+      });
+    }
+
+    complaint.satisfied = satisfied;
+    complaint.feedbackComment =
+      feedbackComment?.trim() || "";
+
+    complaint.feedbackSubmittedAt = new Date();
+
+    // Satisfied user → close complaint
+    if (satisfied === true) {
+      complaint.status = "closed";
+    }
+
+    // Unsatisfied user → complaint remains resolved
+
+    await complaint.save();
+
+    return res.status(200).json({
+      success: true,
+      message:
+        satisfied === true
+          ? "Feedback submitted and complaint closed successfully"
+          : "Feedback submitted successfully",
+      complaint,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export { createComplaint, getComplaints,getComplaintById, updateComplaint, deleteComplaint, getComplaintStats,uploadRequestedDocument,submitComplaintFeedback };

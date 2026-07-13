@@ -86,6 +86,23 @@ const complaintSchema = new mongoose.Schema(
   default: null,
 },
 
+satisfied: {
+  type: Boolean,
+  default: null,
+},
+
+feedbackComment: {
+  type: String,
+  trim: true,
+  maxlength: 1000,
+  default: "",
+},
+
+feedbackSubmittedAt: {
+  type: Date,
+  default: null,
+},
+
     reviewedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

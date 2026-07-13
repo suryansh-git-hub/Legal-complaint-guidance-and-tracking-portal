@@ -4,7 +4,7 @@ import { body } from "express-validator";
 import {
   getAllComplaints,
   getAdminComplaintById,
-  updateComplaintStatus,getAdminDashboard,assessComplaint,createDocumentRequest,reviewRequestedDocument,resolveComplaint
+  updateComplaintStatus,getAdminDashboard,assessComplaint,createDocumentRequest,reviewRequestedDocument,resolveComplaint,reviseComplaintResolution 
 } from "../controllers/adminController.js";
 import {
   validateRequest,
@@ -138,6 +138,31 @@ router.put(
   ],
   validateRequest,
   resolveComplaint
+);
+
+router.put(
+  "/complaints/:id/resolution/revise",
+  [
+    body("actionTaken")
+      .trim()
+      .notEmpty()
+      .withMessage("Action taken is required")
+      .isLength({ max: 2000 })
+      .withMessage(
+        "Action taken cannot exceed 2000 characters"
+      ),
+
+    body("resolutionSummary")
+      .trim()
+      .notEmpty()
+      .withMessage("Resolution summary is required")
+      .isLength({ max: 2000 })
+      .withMessage(
+        "Resolution summary cannot exceed 2000 characters"
+      ),
+  ],
+  validateRequest,
+  reviseComplaintResolution
 );
 
 export default router;

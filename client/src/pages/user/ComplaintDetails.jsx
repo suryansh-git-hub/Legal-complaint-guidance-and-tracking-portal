@@ -19,6 +19,11 @@ function ComplaintDetails() {
   const [selectedFiles, setSelectedFiles] = useState({});
 const [uploadingRequestId, setUploadingRequestId] = useState(null);
 const [uploadError, setUploadError] = useState("");
+const [satisfied, setSatisfied] = useState(null);
+const [feedbackComment, setFeedbackComment] = useState("");
+const [submittingFeedback, setSubmittingFeedback] = useState(false);
+const [feedbackError, setFeedbackError] = useState("");
+const [feedbackMessage, setFeedbackMessage] = useState("");
 
   useEffect(() => {
     const fetchComplaint = async () => {
@@ -123,6 +128,51 @@ const [uploadError, setUploadError] = useState("");
   }
 };
 
+const handleFeedbackSubmit = async (e) => {
+  e.preventDefault();
+
+  if (satisfied === null) {
+    setFeedbackError(
+      "Please select whether you are satisfied with the resolution."
+    );
+    return;
+  }
+
+  try {
+    setSubmittingFeedback(true);
+    setFeedbackError("");
+    setFeedbackMessage("");
+
+    const response = await api.post(
+      `/complaints/${id}/feedback`,
+      {
+        satisfied,
+        feedbackComment,
+      }
+    );
+
+    const updatedComplaint = response.data.complaint;
+
+    setComplaint(updatedComplaint);
+
+    setSatisfied(null);
+    setFeedbackComment("");
+
+    setFeedbackMessage(
+      updatedComplaint.status === "closed"
+        ? "Thank you for your feedback. Your complaint has been closed."
+        : "Your feedback has been submitted. The administrator can now review your concerns."
+    );
+  } catch (error) {
+    setFeedbackError(
+      error.response?.data?.message ||
+        "Failed to submit feedback"
+    );
+  } finally {
+    setSubmittingFeedback(false);
+  }
+}; 
+
   if (loading) {
     return (
       
@@ -219,7 +269,7 @@ const [uploadError, setUploadError] = useState("");
         </div>
 
         <div className="mt-8">
-          <div className="grid grid-cols-5">
+          <div className="grid grid-cols-4">
             {statusSteps.map((step, index) => {
               const completed = index <= currentStep;
 
@@ -457,6 +507,223 @@ href={`${import.meta.env.VITE_UPLOADS_BASE_URL || "http://localhost:5000"}${docu
     </div>
   </section>
 )}
+
+    {/* Final Resolution */}
+
+{["resolved", "closed"].includes(complaint.status) && (
+  <section className="rounded-xl border border-green-200 bg-white p-6 shadow-sm">
+    <div className="flex items-center gap-3 border-b border-gray-200 pb-4">
+      <Check className="h-5 w-5 text-green-600" />
+
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900">
+          Final Resolution
+        </h2>
+
+        <p className="mt-1 text-sm text-gray-500">
+          Your complaint has been reviewed and resolved.
+        </p>
+      </div>
+    </div>
+
+    <div className="mt-5 space-y-5">
+      <div>
+        <p className="text-sm font-medium text-gray-500">
+          Action Taken
+        </p>
+
+        <div className="mt-2 rounded-lg bg-gray-50 p-4">
+          <p className="whitespace-pre-line leading-7 text-gray-700">
+            {complaint.actionTaken ||
+              "No action details available."}
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-gray-500">
+          Resolution Summary
+        </p>
+
+        <div className="mt-2 rounded-lg border border-green-100 bg-green-50 p-4">
+          <p className="whitespace-pre-line leading-7 text-gray-700">
+            {complaint.resolutionSummary ||
+              "No resolution summary available."}
+          </p>
+        </div>
+      </div>
+
+      <div className="border-t border-gray-200 pt-4">
+        <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+          Resolved On
+        </p>
+
+        <p className="mt-1 text-sm text-gray-700">
+          {new Date(
+            complaint.updatedAt
+          ).toLocaleDateString()}
+        </p>
+      </div>
+    </div>
+  </section>
+)}
+
+{/* Resolution Feedback */}
+
+{complaint.status === "resolved" &&
+  complaint.satisfied === null && (
+    <section className="rounded-xl border border-blue-200 bg-white p-6 shadow-sm">
+      <div className="border-b border-gray-200 pb-4">
+        <h2 className="text-lg font-semibold text-gray-900">
+          Resolution Feedback
+        </h2>
+
+        <p className="mt-1 text-sm text-gray-500">
+          Please let us know whether you are satisfied with the
+          resolution provided.
+        </p>
+      </div>
+
+      <form
+        onSubmit={handleFeedbackSubmit}
+        className="mt-5 space-y-5"
+      >
+        <div>
+          <p className="text-sm font-medium text-gray-700">
+            Are you satisfied with the resolution?
+          </p>
+
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => setSatisfied(true)}
+              className={`rounded-lg border px-5 py-3 text-sm font-medium transition ${
+                satisfied === true
+                  ? "border-green-600 bg-green-50 text-green-700"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              Yes, I am satisfied
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSatisfied(false)}
+              className={`rounded-lg border px-5 py-3 text-sm font-medium transition ${
+                satisfied === false
+                  ? "border-red-600 bg-red-50 text-red-700"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              No, I am not satisfied
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor="feedbackComment"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Feedback Comment
+          </label>
+
+          <textarea
+            id="feedbackComment"
+            value={feedbackComment}
+            onChange={(e) =>
+              setFeedbackComment(e.target.value)
+            }
+            placeholder={
+              satisfied === false
+                ? "Please explain what was not addressed..."
+                : "Add an optional comment..."
+            }
+            rows={5}
+            maxLength={1000}
+            className="mt-2 w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
+
+          <p className="mt-1 text-right text-xs text-gray-400">
+            {feedbackComment.length}/1000
+          </p>
+        </div>
+
+        {feedbackError && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {feedbackError}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={submittingFeedback || satisfied === null}
+          className="w-full rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {submittingFeedback
+            ? "Submitting Feedback..."
+            : "Submit Feedback"}
+        </button>
+      </form>
+    </section>
+  )}
+
+  {/* Unsatisfied Feedback Submitted */}
+
+{complaint.status === "resolved" &&
+  complaint.satisfied === false && (
+    <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
+      <h2 className="font-semibold text-amber-800">
+        Feedback Submitted
+      </h2>
+
+      <p className="mt-2 text-sm text-amber-700">
+        You marked this resolution as unsatisfactory. The
+        administrator can review your feedback and revise the
+        resolution.
+      </p>
+
+      {complaint.feedbackComment && (
+        <div className="mt-4 rounded-lg bg-white p-4">
+          <p className="text-sm font-medium text-gray-500">
+            Your Comment
+          </p>
+
+          <p className="mt-2 whitespace-pre-line text-gray-700">
+            {complaint.feedbackComment}
+          </p>
+        </div>
+      )}
+    </section>
+  )}
+
+{/* Satisfied and Closed */}
+
+{complaint.status === "closed" &&
+  complaint.satisfied === true && (
+    <section className="rounded-xl border border-green-200 bg-green-50 p-6 shadow-sm">
+      <h2 className="font-semibold text-green-800">
+        Complaint Closed
+      </h2>
+
+      <p className="mt-2 text-sm text-green-700">
+        You marked the resolution as satisfactory. This
+        complaint is now closed.
+      </p>
+
+      {complaint.feedbackComment && (
+        <div className="mt-4 rounded-lg bg-white p-4">
+          <p className="text-sm font-medium text-gray-500">
+            Your Feedback
+          </p>
+
+          <p className="mt-2 whitespace-pre-line text-gray-700">
+            {complaint.feedbackComment}
+          </p>
+        </div>
+      )}
+    </section>
+  )}
 
           {/* Admin Remarks */}
 

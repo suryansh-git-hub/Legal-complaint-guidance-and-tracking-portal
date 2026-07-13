@@ -572,6 +572,72 @@ const resolveComplaint = async (req, res, next) => {
   }
 };
 
+const reviseComplaintResolution = async (
+  req,
+  res,
+  next
+) => {
+  try {
+    const { id } = req.params;
+    const { actionTaken, resolutionSummary } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid complaint ID",
+      });
+    }
+
+    const complaint = await Complaint.findById(id);
+
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    // Only resolved + unsatisfied complaints can be revised
+    if (
+      complaint.status !== "resolved" ||
+      complaint.satisfied !== false
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Only an unsatisfied resolved complaint can be revised",
+      });
+    }
+
+    complaint.actionTaken = actionTaken;
+    complaint.resolutionSummary = resolutionSummary;
+
+    // Admin has revised the resolution,
+    // so allow user to give feedback again
+    complaint.satisfied = null;
+    complaint.feedbackComment = "";
+    complaint.feedbackSubmittedAt = null;
+
+    complaint.reviewedBy = req.user._id;
+
+    await complaint.save();
+
+    const updatedComplaint =
+      await Complaint.findById(complaint._id)
+        .populate("user", "name email")
+        .populate("issue")
+        .populate("reviewedBy", "name email");
+
+    return res.status(200).json({
+      success: true,
+      message: "Resolution revised successfully",
+      complaint: updatedComplaint,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
-  getAllComplaints,getAdminComplaintById,updateComplaintStatus,getAdminDashboard,assessComplaint,createDocumentRequest,reviewRequestedDocument,resolveComplaint,
+  getAllComplaints,getAdminComplaintById,updateComplaintStatus,getAdminDashboard,assessComplaint,createDocumentRequest,reviewRequestedDocument,resolveComplaint,reviseComplaintResolution 
 };

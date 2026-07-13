@@ -37,6 +37,16 @@ const [actionTaken, setActionTaken] = useState("");
 const [resolutionSummary, setResolutionSummary] =
   useState("");
 const [resolving, setResolving] = useState(false);
+const [revisedActionTaken, setRevisedActionTaken] =
+  useState("");
+
+const [
+  revisedResolutionSummary,
+  setRevisedResolutionSummary,
+] = useState("");
+
+const [revisingResolution, setRevisingResolution] =
+  useState(false);
 
   useEffect(() => {
     const fetchComplaint = async () => {
@@ -49,6 +59,13 @@ const [resolving, setResolving] = useState(false);
         const complaintData = response.data.complaint;
 
         setComplaint(complaintData);
+        setRevisedActionTaken(
+  complaintData.actionTaken || ""
+);
+
+setRevisedResolutionSummary(
+  complaintData.resolutionSummary || ""
+);
         setDocuments(response.data.documents || []);
         setDocumentRequests(response.data.documentRequests || []);
         setStatus(complaintData.status);
@@ -279,6 +296,39 @@ const handleResolveComplaint = async (e) => {
 
   const nextStatus = complaint ? nextStatusMap[complaint.status] : null;
 
+  const handleReviseResolution = async (e) => {
+  e.preventDefault();
+
+  try {
+    setRevisingResolution(true);
+    setError("");
+    setMessage("");
+
+    const response = await api.put(
+      `/admin/complaints/${id}/resolution/revise`,
+      {
+        actionTaken: revisedActionTaken,
+        resolutionSummary: revisedResolutionSummary,
+      }
+    );
+
+    const updatedComplaint = response.data.complaint;
+
+    setComplaint(updatedComplaint);
+
+    setRevisedActionTaken("");
+    setRevisedResolutionSummary("");
+
+    setMessage("Resolution revised successfully.");
+  } catch (error) {
+    setError(
+      error.response?.data?.message ||
+        "Failed to revise resolution"
+    );
+  } finally {
+    setRevisingResolution(false);
+  }
+};
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -583,7 +633,9 @@ const handleResolveComplaint = async (e) => {
   </section>
 )}
 
-{complaint.assessment === "needs-information" && (
+{complaint.assessment === "needs-information" &&
+  complaint.status !== "resolved" &&
+  complaint.status !== "closed" && (
   <section className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
     <div className="border-b border-gray-200 pb-4">
       <h2 className="font-semibold text-gray-900">
@@ -748,10 +800,112 @@ const handleResolveComplaint = async (e) => {
   </section>
 )}
 
+{/* Unsatisfied User Feedback */}
+
+{complaint.status === "resolved" &&
+  complaint.satisfied === false && (
+    <section className="mb-6 rounded-xl border border-amber-300 bg-white p-6 shadow-sm">
+      <div className="border-b border-amber-200 pb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">⚠</span>
+
+          <h2 className="font-semibold text-amber-800">
+            User Marked Resolution Unsatisfactory
+          </h2>
+        </div>
+
+        <p className="mt-2 text-xs text-gray-500">
+          Review the user's feedback and revise the resolution.
+        </p>
+      </div>
+
+      <div className="mt-5">
+        <p className="text-sm font-medium text-gray-500">
+          User Feedback
+        </p>
+
+        <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <p className="whitespace-pre-line text-sm leading-6 text-gray-700">
+            {complaint.feedbackComment ||
+              "The user did not provide a comment."}
+          </p>
+        </div>
+      </div>
+
+      <form
+        onSubmit={handleReviseResolution}
+        className="mt-6 space-y-5"
+      >
+        <div>
+          <label
+            htmlFor="revisedActionTaken"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Revised Action Taken
+          </label>
+
+          <textarea
+            id="revisedActionTaken"
+            value={revisedActionTaken}
+            onChange={(e) =>
+              setRevisedActionTaken(e.target.value)
+            }
+            placeholder="Explain the revised action taken..."
+            rows={5}
+            maxLength={2000}
+            required
+            className="mt-2 w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
+
+          <p className="mt-1 text-right text-xs text-gray-400">
+            {revisedActionTaken.length}/2000
+          </p>
+        </div>
+
+        <div>
+          <label
+            htmlFor="revisedResolutionSummary"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Revised Resolution Summary
+          </label>
+
+          <textarea
+            id="revisedResolutionSummary"
+            value={revisedResolutionSummary}
+            onChange={(e) =>
+              setRevisedResolutionSummary(e.target.value)
+            }
+            placeholder="Provide the revised final resolution..."
+            rows={6}
+            maxLength={2000}
+            required
+            className="mt-2 w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
+
+          <p className="mt-1 text-right text-xs text-gray-400">
+            {revisedResolutionSummary.length}/2000
+          </p>
+        </div>
+
+        <button
+          type="submit"
+          disabled={revisingResolution}
+          className="w-full rounded-lg bg-amber-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {revisingResolution
+            ? "Revising Resolution..."
+            : "Submit Revised Resolution"}
+        </button>
+      </form>
+    </section>
+  )}
 
 {/* Manage Complaint */}
 
-{complaint.assessment !== "pending" && (
+{complaint.assessment !== "pending" &&
+  complaint.status !== "resolved" &&
+  complaint.status !== "closed" && (
   <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm lg:sticky lg:top-6">
 
     <div className="flex items-center gap-3 border-b border-gray-200 pb-4">

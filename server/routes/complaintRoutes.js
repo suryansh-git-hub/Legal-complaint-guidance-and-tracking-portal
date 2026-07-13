@@ -3,7 +3,7 @@ import { body } from "express-validator";
 
 import { createComplaint,getComplaints,getComplaintById,
   updateComplaint,deleteComplaint,
-  getComplaintStats,uploadRequestedDocument
+  getComplaintStats,uploadRequestedDocument,submitComplaintFeedback
 } from "../controllers/complaintController.js";
 
 import {
@@ -52,6 +52,27 @@ router.post(
   uploadComplaintDocuments.single("document"),
   uploadRequestedDocument
 ); 
+
+router.post(
+  "/:id/feedback",
+  [
+    body("satisfied")
+      .isBoolean()
+      .withMessage(
+        "Satisfied value must be true or false"
+      ),
+
+    body("feedbackComment")
+      .optional()
+      .trim()
+      .isLength({ max: 1000 })
+      .withMessage(
+        "Feedback comment cannot exceed 1000 characters"
+      ),
+  ],
+  validateRequest,
+  submitComplaintFeedback
+);
 
 router
   .route("/:id")
