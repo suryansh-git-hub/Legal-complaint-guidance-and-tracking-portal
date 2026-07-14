@@ -33,7 +33,7 @@ const registerUser = async (req, res) => {
       password: hashedPassword,
     });
 
-    generateToken(res, user._id);
+   // generateToken(res, user._id);
 
     res.status(201).json({
       message: "User registered successfully",

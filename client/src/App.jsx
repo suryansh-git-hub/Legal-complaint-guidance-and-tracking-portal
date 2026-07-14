@@ -19,6 +19,7 @@ import MyComplaints from "./pages/user/MyComplaints";
 import ComplaintDetails from "./pages/user/ComplaintDetails";
 import AllComplaints from "./pages/admin/AllComplaints";
 import AdminComplaintDetails from "./pages/admin/AdminComplaintDetails";
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
@@ -69,6 +70,14 @@ function App() {
       />
     </Route>
   </Route>
+
+    {/* 404 Route */}
+
+          <Route
+            path="*"
+            element={<NotFound />}
+          />
+        
 </Routes>
     </BrowserRouter>
   );

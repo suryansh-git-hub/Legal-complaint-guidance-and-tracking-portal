@@ -18,7 +18,9 @@ const protect = async (req, res, next) => {
       process.env.JWT_SECRET
     );
 
-    const user = await User.findById(decoded.id);
+    const user = await User.findById(
+      decoded.id
+    ).select("-password");
 
     if (!user) {
       return res.status(401).json({
@@ -33,7 +35,7 @@ const protect = async (req, res, next) => {
   } catch (error) {
     return res.status(401).json({
       success: false,
-      message: "Not authorized, invalid token",
+      message: "Not authorized, invalid or expired token",
     });
   }
 };
