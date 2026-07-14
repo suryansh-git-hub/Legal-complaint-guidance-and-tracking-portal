@@ -14,6 +14,7 @@ import {
 import adminRoutes from "./routes/adminRoutes.js";
 import path from "path";
 
+import complaintMessageRoutes from "./routes/complaintMessageRoutes.js";
 dotenv.config();
 
 connectDB();
@@ -43,6 +44,10 @@ app.use("/api/complaints", complaintRoutes);
 app.use(
   "/uploads",
   express.static(path.join(process.cwd(), "uploads"))
+);
+app.use(
+  "/api/complaint-conversations",
+  complaintMessageRoutes
 );
 app.use(notFound);
 app.use(errorHandler);

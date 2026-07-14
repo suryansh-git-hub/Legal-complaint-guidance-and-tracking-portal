@@ -377,21 +377,28 @@ const createDocumentRequest = async (req, res, next) => {
       });
     }
 
-    if (complaint.assessment !== "needs-information") {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Documents can only be requested when more information is needed",
-      });
-    }
+if (
+  !["actionable", "needs-information"].includes(
+    complaint.assessment
+  )
+) {
+  return res.status(400).json({
+    success: false,
+    message:
+      "Documents can only be requested for actionable complaints or complaints requiring more information",
+  });
+}
 
-    // if (complaint.status !== "needs-information") {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message:
-    //       "Complaint is not waiting for additional information",
-    //   });
-    // }
+if (
+  ["resolved", "closed"].includes(complaint.status)
+) {
+  return res.status(400).json({
+    success: false,
+    message:
+      "Documents cannot be requested for resolved or closed complaints",
+  });
+}
+  
 
     const existingPendingRequest =
       await DocumentRequest.findOne({

@@ -12,7 +12,8 @@ const seedAdmin = async () => {
     await connectDB();
 
     const adminEmail = process.env.ADMIN_EMAIL;
-    const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminPassword =
+      process.env.ADMIN_PASSWORD;
 
     if (!adminEmail || !adminPassword) {
       throw new Error(
@@ -24,20 +25,23 @@ const seedAdmin = async () => {
       email: adminEmail,
     });
 
+    const salt = await bcrypt.genSalt(10);
+
+    const hashedPassword = await bcrypt.hash(
+      adminPassword,
+      salt
+    );
+
     if (existingAdmin) {
       existingAdmin.role = "admin";
+      existingAdmin.password = hashedPassword;
 
       await existingAdmin.save();
 
-      console.log("Existing user promoted to admin");
-    } else {
-      const salt = await bcrypt.genSalt(10);
-
-      const hashedPassword = await bcrypt.hash(
-        adminPassword,
-        salt
+      console.log(
+        "Existing admin updated successfully"
       );
-
+    } else {
       await User.create({
         name: "NyayaPath Admin",
         email: adminEmail,
@@ -52,7 +56,10 @@ const seedAdmin = async () => {
 
     process.exit(0);
   } catch (error) {
-    console.error("Admin seeding failed:", error.message);
+    console.error(
+      "Admin seeding failed:",
+      error.message
+    );
 
     await mongoose.connection.close();
 

@@ -5,7 +5,10 @@ import { createComplaint,getComplaints,getComplaintById,
   updateComplaint,deleteComplaint,
   getComplaintStats,uploadRequestedDocument,submitComplaintFeedback
 } from "../controllers/complaintController.js";
-
+import {
+  getComplaintMessages,
+  sendComplaintMessage,
+} from "../controllers/messageController.js";
 import {
   protect,
 } from "../middleware/authMiddleware.js";
@@ -73,6 +76,28 @@ router.post(
   validateRequest,
   submitComplaintFeedback
 );
+
+/* ==============================
+   Complaint Conversation Routes
+================================ */
+
+router
+  .route("/:id/messages")
+  .get(getComplaintMessages)
+  .post(
+    [
+      body("message")
+        .trim()
+        .notEmpty()
+        .withMessage("Message is required")
+        .isLength({ max: 2000 })
+        .withMessage(
+          "Message cannot exceed 2000 characters"
+        ),
+    ],
+    validateRequest,
+    sendComplaintMessage
+  );
 
 router
   .route("/:id")

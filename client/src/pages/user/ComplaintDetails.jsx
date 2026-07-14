@@ -10,7 +10,7 @@ import {
   FileText,
   LoaderCircle,
   MessageSquareText,
-  Scale,
+  Scale,Send
 } from "lucide-react";
 
 import api from "../../api/axios";
@@ -53,6 +53,18 @@ function ComplaintDetails() {
 
   const [feedbackMessage, setFeedbackMessage] =
     useState("");
+    const [messages, setMessages] = useState([]);
+
+const [newMessage, setNewMessage] = useState("");
+
+const [messagesLoading, setMessagesLoading] =
+  useState(true);
+
+const [sendingMessage, setSendingMessage] =
+  useState(false);
+
+const [messageError, setMessageError] =
+  useState("");
 
   /* =====================================
      FETCH COMPLAINT DETAILS
@@ -89,7 +101,33 @@ function ComplaintDetails() {
 
     fetchComplaint();
   }, [id]);
+/* =====================================
+   FETCH COMPLAINT MESSAGES
+===================================== */
 
+useEffect(() => {
+  const fetchMessages = async () => {
+    try {
+      setMessagesLoading(true);
+      setMessageError("");
+
+      const response = await api.get(
+        `/complaints/${id}/messages`
+      );
+
+      setMessages(response.data.messages || []);
+    } catch (error) {
+      setMessageError(
+        error.response?.data?.message ||
+          "Failed to load conversation"
+      );
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
+  fetchMessages();
+}, [id]);
   /* =====================================
      COMPLAINT STATUS STEPS
   ===================================== */
@@ -233,7 +271,50 @@ function ComplaintDetails() {
       setSubmittingFeedback(false);
     }
   };
+/* =====================================
+   SEND COMPLAINT MESSAGE
+===================================== */
 
+const handleSendMessage = async (e) => {
+  e.preventDefault();
+
+  if (!newMessage.trim()) {
+    setMessageError(
+      "Please enter a message before sending."
+    );
+
+    return;
+  }
+
+  try {
+    setSendingMessage(true);
+    setMessageError("");
+
+    const response = await api.post(
+      `/complaints/${id}/messages`,
+      {
+        message: newMessage.trim(),
+      }
+    );
+
+    const createdMessage =
+      response.data.conversationMessage;
+
+    setMessages((previousMessages) => [
+      ...previousMessages,
+      createdMessage,
+    ]);
+
+    setNewMessage("");
+  } catch (error) {
+    setMessageError(
+      error.response?.data?.message ||
+        "Failed to send message"
+    );
+  } finally {
+    setSendingMessage(false);
+  }
+};
   /* =====================================
      LOADING STATE
   ===================================== */
@@ -943,6 +1024,179 @@ function ComplaintDetails() {
               )}
             </div>
           </section>
+
+          {/* =====================================
+    COMPLAINT CONVERSATION
+===================================== */}
+
+<section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+  <div className="flex items-center gap-3 border-b border-gray-200 pb-4 dark:border-gray-700">
+    <MessageSquareText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+
+    <div>
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        Complaint Conversation
+      </h2>
+
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Send additional information and communicate with
+        the Legal Admin about this complaint.
+      </p>
+    </div>
+  </div>
+
+  {/* MESSAGE LIST */}
+
+  <div className="mt-5">
+    {messagesLoading ? (
+      <div className="flex items-center justify-center py-10">
+        <LoaderCircle className="h-6 w-6 animate-spin text-blue-600 dark:text-blue-400" />
+      </div>
+    ) : messageError && messages.length === 0 ? (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+        {messageError}
+      </div>
+    ) : messages.length === 0 ? (
+      <div className="rounded-lg bg-gray-50 px-5 py-10 text-center dark:bg-gray-900/50">
+        <MessageSquareText className="mx-auto h-7 w-7 text-gray-400 dark:text-gray-500" />
+
+        <p className="mt-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+          No messages yet
+        </p>
+
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          You can send additional information about your
+          complaint to the Legal Admin.
+        </p>
+      </div>
+    ) : (
+      <div className="max-h-[500px] space-y-4 overflow-y-auto rounded-lg bg-gray-50 p-4 dark:bg-gray-900/50">
+        {messages.map((conversationMessage) => {
+          const isUser =
+            conversationMessage.senderRole === "user";
+
+          return (
+            <div
+              key={conversationMessage._id}
+              className={`flex ${
+                isUser
+                  ? "justify-end"
+                  : "justify-start"
+              }`}
+            >
+              <div
+                className={`max-w-[85%] rounded-xl px-4 py-3 ${
+                  isUser
+                    ? "bg-blue-600 text-white"
+                    : "border border-gray-200 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <p
+                    className={`text-xs font-semibold ${
+                      isUser
+                        ? "text-blue-100"
+                        : "text-blue-600 dark:text-blue-400"
+                    }`}
+                  >
+                    {isUser
+                      ? "You"
+                      : "Legal Admin"}
+                  </p>
+                </div>
+
+                <p className="mt-2 whitespace-pre-line text-sm leading-6">
+                  {conversationMessage.message}
+                </p>
+
+                <p
+                  className={`mt-2 text-right text-xs ${
+                    isUser
+                      ? "text-blue-100"
+                      : "text-gray-400 dark:text-gray-500"
+                  }`}
+                >
+                  {new Date(
+                    conversationMessage.createdAt
+                  ).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+
+  {/* SEND MESSAGE FORM */}
+
+  {!["resolved", "closed"].includes(
+  complaint.status
+) ? (
+  <form
+    onSubmit={handleSendMessage}
+    className="mt-5"
+  >
+    <textarea
+      value={newMessage}
+      onChange={(e) =>
+        setNewMessage(e.target.value)
+      }
+      placeholder="Write a message to the Legal Admin..."
+      rows={4}
+      maxLength={2000}
+      className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:ring-blue-950"
+    />
+
+    <div className="mt-1 flex items-center justify-between">
+      <p className="text-xs text-gray-500 dark:text-gray-400">
+        Use this conversation to provide additional
+        information or answer questions from the Legal
+        Admin.
+      </p>
+
+      <p className="ml-4 shrink-0 text-xs text-gray-400 dark:text-gray-500">
+        {newMessage.length}/2000
+      </p>
+    </div>
+
+    {messageError && (
+      <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+        {messageError}
+      </div>
+    )}
+
+    <div className="mt-4 flex justify-end">
+      <button
+        type="submit"
+        disabled={
+          sendingMessage || !newMessage.trim()
+        }
+        className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {sendingMessage ? (
+          <>
+            <LoaderCircle className="h-4 w-4 animate-spin" />
+            Sending...
+          </>
+        ) : (
+          <>
+            <Send className="h-4 w-4" />
+            Send Message
+          </>
+        )}
+      </button>
+    </div>
+  </form>
+) : (
+  <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4 text-center dark:border-gray-700 dark:bg-gray-900/50">
+    <p className="text-sm text-gray-600 dark:text-gray-400">
+      This conversation is read-only because the complaint
+      has been {complaint.status}.
+    </p>
+  </div>
+)}
+</section>
         </div>
 
         {/* =====================================
