@@ -72,7 +72,7 @@ function GuidanceDetails() {
       {/* Back Link */}
 
       <Link
-        to={`/issues/${issue.category}`}
+        to={`/issues/${issue.category._id}`}
         className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
       >
         ← Back to Issues
@@ -151,7 +151,7 @@ function GuidanceDetails() {
           </h2>
 
           <ol className="mt-4 space-y-3">
-            {issue.complaintProcedure?.map(
+            {issue.complaintSteps?.map(
               (step, index) => (
                 <li
                   key={index}
