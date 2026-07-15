@@ -23,7 +23,7 @@ function AuthProvider({ children }) {
         );
 
         setUser(response.data.user);
-      } catch (error) {
+      } catch  {
         setUser(null);
       } finally {
         setAuthLoading(false);

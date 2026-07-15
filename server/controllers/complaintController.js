@@ -132,6 +132,12 @@ const getComplaints = async (req, res) => {
 
 const getComplaintById = async (req, res, next) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+  return res.status(400).json({
+    success: false,
+    message: "Invalid complaint ID",
+  });
+}
     const complaint = await Complaint.findOne({
       _id: req.params.id,
       user: req.user._id,

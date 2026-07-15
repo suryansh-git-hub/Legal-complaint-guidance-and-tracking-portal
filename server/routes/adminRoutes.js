@@ -160,6 +160,16 @@ router.put(
       .withMessage(
         "Resolution summary cannot exceed 2000 characters"
       ),
+      body("adminRemarks")
+  .trim()
+  .notEmpty()
+  .withMessage(
+    "Updated admin remarks are required"
+  )
+  .isLength({ max: 1000 })
+  .withMessage(
+    "Admin remarks cannot exceed 1000 characters"
+  ),
   ],
   validateRequest,
   reviseComplaintResolution

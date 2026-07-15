@@ -144,6 +144,12 @@ const getAdminComplaintById = async (
   next
 ) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+  return res.status(400).json({
+    success: false,
+    message: "Invalid complaint ID",
+  });
+}
     const complaint = await Complaint.findById(
       req.params.id
     )
@@ -293,6 +299,13 @@ const updateComplaintStatus = async (req, res) => {
 
 const assessComplaint = async (req, res, next) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid complaint ID",
+      });
+    }
+
     const { assessment, adminRemarks } = req.body;
 
     const complaint = await Complaint.findById(
@@ -306,10 +319,16 @@ const assessComplaint = async (req, res, next) => {
       });
     }
 
-    if (complaint.assessment !== "pending") {
+    // Prevent reassessment after complaint is resolved or closed
+    if (
+      ["resolved", "closed"].includes(
+        complaint.status
+      )
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Complaint has already been assessed",
+        message:
+          "Assessment cannot be changed for resolved or closed complaints",
       });
     }
 
@@ -319,7 +338,9 @@ const assessComplaint = async (req, res, next) => {
       "not-actionable",
     ];
 
-    if (!allowedAssessments.includes(assessment)) {
+    if (
+      !allowedAssessments.includes(assessment)
+    ) {
       return res.status(400).json({
         success: false,
         message: "Invalid complaint assessment",
@@ -336,13 +357,13 @@ const assessComplaint = async (req, res, next) => {
 
     if (assessment === "actionable") {
       complaint.status = "in-progress";
-    }
-
-    if (assessment === "needs-information") {
+    } else if (
+      assessment === "needs-information"
+    ) {
       complaint.status = "submitted";
-    }
-
-    if (assessment === "not-actionable") {
+    } else if (
+      assessment === "not-actionable"
+    ) {
       complaint.status = "closed";
     }
 
@@ -352,11 +373,15 @@ const assessComplaint = async (req, res, next) => {
       await Complaint.findById(complaint._id)
         .populate("user", "name email")
         .populate("issue")
-        .populate("reviewedBy", "name email");
+        .populate(
+          "reviewedBy",
+          "name email"
+        );
 
     return res.status(200).json({
       success: true,
-      message: "Complaint assessed successfully",
+      message:
+        "Complaint assessment updated successfully",
       complaint: updatedComplaint,
     });
   } catch (error) {
@@ -577,7 +602,12 @@ const reviseComplaintResolution = async (
 ) => {
   try {
     const { id } = req.params;
-    const { actionTaken, resolutionSummary } = req.body;
+
+    const {
+      actionTaken,
+      resolutionSummary,
+      adminRemarks,
+    } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -595,7 +625,6 @@ const reviseComplaintResolution = async (
       });
     }
 
-    // Only resolved + unsatisfied complaints can be revised
     if (
       complaint.status !== "resolved" ||
       complaint.satisfied !== false
@@ -608,10 +637,11 @@ const reviseComplaintResolution = async (
     }
 
     complaint.actionTaken = actionTaken;
-    complaint.resolutionSummary = resolutionSummary;
+    complaint.resolutionSummary =
+      resolutionSummary;
+    complaint.adminRemarks = adminRemarks;
 
-    // Admin has revised the resolution,
-    // so allow user to give feedback again
+    // Allow user to give feedback again
     complaint.satisfied = null;
     complaint.feedbackComment = "";
     complaint.feedbackSubmittedAt = null;
@@ -624,11 +654,15 @@ const reviseComplaintResolution = async (
       await Complaint.findById(complaint._id)
         .populate("user", "name email")
         .populate("issue")
-        .populate("reviewedBy", "name email");
+        .populate(
+          "reviewedBy",
+          "name email"
+        );
 
     return res.status(200).json({
       success: true,
-      message: "Resolution revised successfully",
+      message:
+        "Resolution revised successfully",
       complaint: updatedComplaint,
     });
   } catch (error) {

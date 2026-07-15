@@ -52,6 +52,8 @@ function AdminComplaintDetails() {
 
   const [revisingResolution, setRevisingResolution] =
     useState(false);
+    const [revisedAdminRemarks, setRevisedAdminRemarks] =
+  useState("");
 const [conversationMessages, setConversationMessages] =
   useState([]);
 
@@ -77,6 +79,12 @@ const messagesResponse = await api.get(
 
         setComplaint(complaintData);
 
+        setAssessment(
+  complaintData.assessment === "pending"
+    ? ""
+    : complaintData.assessment
+);
+
         setRevisedActionTaken(
           complaintData.actionTaken || ""
         );
@@ -84,6 +92,10 @@ const messagesResponse = await api.get(
         setRevisedResolutionSummary(
           complaintData.resolutionSummary || ""
         );
+
+        setRevisedAdminRemarks(
+  complaintData.adminRemarks || ""
+);
 
         setDocuments(response.data.documents || []);
 
@@ -386,11 +398,11 @@ setConversationMessages(
 
       const response = await api.put(
         `/admin/complaints/${id}/resolution/revise`,
-        {
-          actionTaken: revisedActionTaken,
-          resolutionSummary:
-            revisedResolutionSummary,
-        }
+      {
+  actionTaken: revisedActionTaken,
+  resolutionSummary: revisedResolutionSummary,
+  adminRemarks: revisedAdminRemarks,
+}
       );
 
       const updatedComplaint =
@@ -990,118 +1002,103 @@ const handleSendMessage = async (e) => {
         </div>
 
         <aside>
-          {/* Complaint Assessment */}
+  
 
-          {complaint.assessment === "pending" && (
-            <section className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <div className="border-b border-gray-200 pb-4 dark:border-gray-700">
-                <h2 className="font-semibold text-gray-900 dark:text-gray-100">
-                  Complaint Assessment
-                </h2>
+      {/* Complaint Assessment */}
 
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Review the complaint and supporting
-                  documents before making an assessment.
-                </p>
-              </div>
+{!["resolved", "closed"].includes(
+  complaint.status
+) && (
+  <section className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div className="border-b border-gray-200 pb-4 dark:border-gray-700">
+      <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+        Complaint Assessment
+      </h2>
 
-              <form
-                onSubmit={handleAssessment}
-                className="mt-5 space-y-5"
-              >
-                <div>
-                  <label
-                    htmlFor="assessment"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    Assessment Decision
-                  </label>
+      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        {complaint.assessment === "pending"
+          ? "Review the complaint and supporting documents before making an assessment."
+          : "Review or change the current assessment if new information becomes available."}
+      </p>
+    </div>
 
-                  <select
-                    id="assessment"
-                    value={assessment}
-                    onChange={(e) =>
-                      setAssessment(e.target.value)
-                    }
-                    required
-                    className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:focus:ring-blue-900"
-                  >
-                    <option value="">
-                      Select assessment
-                    </option>
+    <form
+      onSubmit={handleAssessment}
+      className="mt-5 space-y-5"
+    >
+      <div>
+        <label
+          htmlFor="assessment"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          Assessment Decision
+        </label>
 
-                    <option value="actionable">
-                      Actionable
-                    </option>
+        <select
+          id="assessment"
+          value={assessment}
+          onChange={(e) =>
+            setAssessment(e.target.value)
+          }
+          required
+          className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:focus:ring-blue-900"
+        >
+          <option value="">
+            Select assessment
+          </option>
 
-                    <option value="needs-information">
-                      Needs More Information
-                    </option>
+          <option value="actionable">
+            Actionable
+          </option>
 
-                    <option value="not-actionable">
-                      Not Actionable
-                    </option>
-                  </select>
-                </div>
+          <option value="needs-information">
+            Needs More Information
+          </option>
 
-                <div>
-                  <label
-                    htmlFor="assessmentRemarks"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    Assessment Remarks
-                  </label>
+          <option value="not-actionable">
+            Not Actionable
+          </option>
+        </select>
+      </div>
 
-                  <textarea
-                    id="assessmentRemarks"
-                    value={adminRemarks}
-                    onChange={(e) =>
-                      setAdminRemarks(e.target.value)
-                    }
-                    placeholder="Explain the assessment decision..."
-                    rows={5}
-                    maxLength={1000}
-                    className="mt-2 w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:ring-blue-900"
-                  />
-                </div>
+      <div>
+        <label
+          htmlFor="assessmentRemarks"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          Assessment Remarks
+        </label>
 
-                <button
-                  type="submit"
-                  disabled={
-                    assessing || !assessment
-                  }
-                  className="w-full rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {assessing
-                    ? "Assessing..."
-                    : "Submit Assessment"}
-                </button>
-              </form>
-            </section>
-          )}
+        <textarea
+          id="assessmentRemarks"
+          value={adminRemarks}
+          onChange={(e) =>
+            setAdminRemarks(e.target.value)
+          }
+          placeholder="Explain the assessment decision..."
+          rows={5}
+          maxLength={1000}
+          className="mt-2 w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:ring-blue-900"
+        />
+      </div>
 
-          {/* Completed Assessment */}
-
-          {complaint.assessment !== "pending" && (
-            <section className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <h2 className="font-semibold text-gray-900 dark:text-gray-100">
-                Complaint Assessment
-              </h2>
-
-              <div className="mt-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-900">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Assessment Decision
-                </p>
-
-                <p className="mt-2 font-semibold capitalize text-gray-900 dark:text-gray-100">
-                  {complaint.assessment.replace(
-                    "-",
-                    " "
-                  )}
-                </p>
-              </div>
-            </section>
-          )}
+      <button
+        type="submit"
+        disabled={
+          assessing ||
+          !assessment
+        }
+        className="w-full rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {assessing
+          ? "Updating..."
+          : complaint.assessment === "pending"
+            ? "Submit Assessment"
+            : "Update Assessment"}
+      </button>
+    </form>
+  </section>
+)}
 
           {/* Request Additional Document */}
 
@@ -1381,9 +1378,40 @@ const handleSendMessage = async (e) => {
                     </p>
                   </div>
 
+                  <div>
+  <label
+    htmlFor="revisedAdminRemarks"
+    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+  >
+    Updated Admin Remarks
+  </label>
+
+  <textarea
+    id="revisedAdminRemarks"
+    value={revisedAdminRemarks}
+    onChange={(e) =>
+      setRevisedAdminRemarks(e.target.value)
+    }
+    placeholder="Explain the updated decision or resolution..."
+    rows={5}
+    maxLength={1000}
+    required
+    className="mt-2 w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:ring-blue-900"
+  />
+
+  <p className="mt-1 text-right text-xs text-gray-400 dark:text-gray-500">
+    {revisedAdminRemarks.length}/1000
+  </p>
+</div>
+
                   <button
                     type="submit"
-                    disabled={revisingResolution}
+                    disabled={
+  revisingResolution ||
+  !revisedActionTaken.trim() ||
+  !revisedResolutionSummary.trim() ||
+  !revisedAdminRemarks.trim()
+}
                     className="w-full rounded-lg bg-amber-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {revisingResolution
