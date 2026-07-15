@@ -7,7 +7,7 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.js",
+    "start": "node server.js",
     "seed:categories": "node seed/categorySeeder.js",
     "seed:issues": "node seed/issueSeeder.js",
     "seed:admin": "node seed/adminSeeder.js"
