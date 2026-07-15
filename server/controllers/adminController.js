@@ -670,6 +670,62 @@ const reviseComplaintResolution = async (
   }
 };
 
+const reviewComplaintDocument = async (req, res, next) => {
+  try {
+    const { documentId } = req.params;
+    const { status, adminReviewRemarks } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(documentId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid document ID",
+      });
+    }
+
+    if (!["accepted", "rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid review status",
+      });
+    }
+
+    const document = await ComplaintDocument.findById(
+      documentId
+    );
+
+    if (!document) {
+      return res.status(404).json({
+        success: false,
+        message: "Document not found",
+      });
+    }
+
+    document.reviewStatus = status;
+    document.reviewedBy = req.user._id;
+    document.reviewedAt = new Date();
+
+    if (adminReviewRemarks !== undefined) {
+      document.adminReviewRemarks =
+        adminReviewRemarks;
+    }
+
+    await document.save();
+
+    const populatedDocument =
+      await ComplaintDocument.findById(document._id)
+        .populate("uploadedBy", "name email")
+        .populate("reviewedBy", "name email");
+
+    return res.status(200).json({
+      success: true,
+      message: `Document ${status} successfully`,
+      document: populatedDocument,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
-  getAllComplaints,getAdminComplaintById,updateComplaintStatus,getAdminDashboard,assessComplaint,createDocumentRequest,reviewRequestedDocument,resolveComplaint,reviseComplaintResolution 
+  getAllComplaints,getAdminComplaintById,updateComplaintStatus,getAdminDashboard,assessComplaint,createDocumentRequest,reviewRequestedDocument,reviewComplaintDocument,resolveComplaint,reviseComplaintResolution 
 };

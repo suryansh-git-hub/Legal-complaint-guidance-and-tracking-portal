@@ -4,7 +4,7 @@ import { body } from "express-validator";
 import {
   getAllComplaints,
   getAdminComplaintById,
-  updateComplaintStatus,getAdminDashboard,assessComplaint,createDocumentRequest,reviewRequestedDocument,resolveComplaint,reviseComplaintResolution 
+  updateComplaintStatus,getAdminDashboard,assessComplaint,createDocumentRequest,reviewRequestedDocument,resolveComplaint,reviseComplaintResolution ,reviewComplaintDocument
 } from "../controllers/adminController.js";
 import {
   validateRequest,
@@ -113,6 +113,29 @@ router.put(
   ],
   validateRequest,
   reviewRequestedDocument
+);
+
+router.put(
+  "/documents/:documentId/review",
+  [
+    body("status")
+      .notEmpty()
+      .withMessage("Review status is required")
+      .isIn(["accepted", "rejected"])
+      .withMessage(
+        "Review status must be accepted or rejected"
+      ),
+
+    body("adminReviewRemarks")
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage(
+        "Review remarks cannot exceed 500 characters"
+      ),
+  ],
+  validateRequest,
+  reviewComplaintDocument
 );
 
 router.put(

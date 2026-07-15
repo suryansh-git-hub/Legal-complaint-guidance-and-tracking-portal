@@ -37,6 +37,8 @@ function AdminComplaintDetails() {
     useState(false);
   const [reviewingRequestId, setReviewingRequestId] =
     useState(null);
+    const [reviewingDocumentId, setReviewingDocumentId] =
+  useState(null);
   const [actionTaken, setActionTaken] = useState("");
   const [resolutionSummary, setResolutionSummary] =
     useState("");
@@ -303,6 +305,45 @@ setConversationMessages(
       setReviewingRequestId(null);
     }
   };
+
+  const handleInitialDocumentReview = async (
+  documentId,
+  reviewStatus
+) => {
+  try {
+    setReviewingDocumentId(documentId);
+    setError("");
+    setMessage("");
+
+    const response = await api.put(
+      `/admin/documents/${documentId}/review`,
+      {
+        status: reviewStatus,
+      }
+    );
+
+    const updatedDocument = response.data.document;
+
+    setDocuments((previousDocuments) =>
+      previousDocuments.map((document) =>
+        document._id === updatedDocument._id
+          ? updatedDocument
+          : document
+      )
+    );
+
+    setMessage(
+      `Document ${reviewStatus} successfully.`
+    );
+  } catch (error) {
+    setError(
+      error.response?.data?.message ||
+        "Failed to review document"
+    );
+  } finally {
+    setReviewingDocumentId(null);
+  }
+};
 
   const handleResolveComplaint = async (e) => {
     e.preventDefault();
@@ -572,123 +613,162 @@ const handleSendMessage = async (e) => {
               </h2>
             </div>
 
-            <div className="mt-5">
-              {documents.length > 0 ? (
-                <div className="space-y-3">
-                  {documents.map((document) => {
-                    const relatedRequest =
-                      documentRequests.find(
-                        (request) =>
-                          request._id ===
-                          (document.documentRequest?._id ||
-                            document.documentRequest)
-                      );
+          <div className="mt-5">
+  {documents.length > 0 ? (
+    <div className="space-y-3">
+      {documents.map((document) => {
+        const relatedRequest = documentRequests.find(
+          (request) =>
+            request._id ===
+            (document.documentRequest?._id ||
+              document.documentRequest)
+        );
 
-                    return (
-                      <div
-                        key={document._id}
-                        className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900"
-                      >
-                        <div className="flex min-w-0 items-center gap-3">
-                          <div className="rounded-lg bg-blue-50 p-2 dark:bg-blue-950/50">
-                            <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                          </div>
+        return (
+          <div
+            key={document._id}
+            className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900"
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="rounded-lg bg-blue-50 p-2 dark:bg-blue-950/50">
+                <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
 
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-                              {document.originalName}
-                            </p>
-
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                              {(
-                                document.fileSize /
-                                1024 /
-                                1024
-                              ).toFixed(2)}{" "}
-                              MB
-                            </p>
-
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                              Review Status:{" "}
-                              <span className="font-medium capitalize">
-                                {document.reviewStatus ||
-                                  "pending"}
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-                          <a
-                            href={`${
-                              import.meta.env
-                                .VITE_UPLOADS_BASE_URL ||
-                              "http://localhost:5000"
-                            }${document.fileUrl}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-950/50"
-                          >
-                            View Document
-
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
-
-                          {relatedRequest?.status ===
-                            "submitted" && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleDocumentReview(
-                                    relatedRequest._id,
-                                    "accepted"
-                                  )
-                                }
-                                disabled={
-                                  reviewingRequestId ===
-                                  relatedRequest._id
-                                }
-                                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                {reviewingRequestId ===
-                                relatedRequest._id
-                                  ? "Reviewing..."
-                                  : "Accept"}
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleDocumentReview(
-                                    relatedRequest._id,
-                                    "rejected"
-                                  )
-                                }
-                                disabled={
-                                  reviewingRequestId ===
-                                  relatedRequest._id
-                                }
-                                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                {reviewingRequestId ===
-                                relatedRequest._id
-                                  ? "Reviewing..."
-                                  : "Reject"}
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  No supporting documents were uploaded.
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {document.originalName}
                 </p>
-              )}
+
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {(document.fileSize / 1024 / 1024).toFixed(2)} MB
+                </p>
+
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Review Status:{" "}
+                  <span className="font-medium capitalize">
+                    {document.reviewStatus || "pending"}
+                  </span>
+                </p>
+              </div>
             </div>
+
+            <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+              <a
+                href={`${
+                  import.meta.env.VITE_UPLOADS_BASE_URL ||
+                  "http://localhost:5000"
+                }${document.fileUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-950/50"
+              >
+                View Document
+                <ExternalLink className="h-4 w-4" />
+              </a>
+
+              {/* Initial Documents */}
+              {document.documentType === "initial" &&
+                document.reviewStatus === "pending" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleInitialDocumentReview(
+                          document._id,
+                          "accepted"
+                        )
+                      }
+                      disabled={
+                        reviewingDocumentId ===
+                        document._id
+                      }
+                      className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {reviewingDocumentId ===
+                      document._id
+                        ? "Reviewing..."
+                        : "Accept"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleInitialDocumentReview(
+                          document._id,
+                          "rejected"
+                        )
+                      }
+                      disabled={
+                        reviewingDocumentId ===
+                        document._id
+                      }
+                      className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {reviewingDocumentId ===
+                      document._id
+                        ? "Reviewing..."
+                        : "Reject"}
+                    </button>
+                  </>
+                )}
+
+              {/* Requested Documents */}
+              {document.documentType === "requested" &&
+                relatedRequest?.status ===
+                  "submitted" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleDocumentReview(
+                          relatedRequest._id,
+                          "accepted"
+                        )
+                      }
+                      disabled={
+                        reviewingRequestId ===
+                        relatedRequest._id
+                      }
+                      className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {reviewingRequestId ===
+                      relatedRequest._id
+                        ? "Reviewing..."
+                        : "Accept"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleDocumentReview(
+                          relatedRequest._id,
+                          "rejected"
+                        )
+                      }
+                      disabled={
+                        reviewingRequestId ===
+                        relatedRequest._id
+                      }
+                      className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {reviewingRequestId ===
+                      relatedRequest._id
+                        ? "Reviewing..."
+                        : "Reject"}
+                    </button>
+                  </>
+                )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  ) : (
+    <p className="text-sm text-gray-500 dark:text-gray-400">
+      No supporting documents were uploaded.
+    </p>
+  )}
+</div>
           </section>
 
 {/* Complaint Conversation */}
