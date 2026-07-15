@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import dns from "dns";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
@@ -17,15 +18,38 @@ import path from "path";
 import complaintMessageRoutes from "./routes/complaintMessageRoutes.js";
 dotenv.config();
 
+// Some hosts (e.g. Render) don't route outbound IPv6 traffic,
+// which breaks connections to services (like Gmail SMTP) that
+// resolve to an IPv6 address first. Prefer IPv4 by default.
+dns.setDefaultResultOrder("ipv4first");
+
 connectDB();
 
 const app = express();
 
 // Middleware
-app.use(cors({
-    origin: process.env.CLIENT_URL,
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.CLIENT_URL,
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (Postman, curl, etc.)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
-  }));
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 
